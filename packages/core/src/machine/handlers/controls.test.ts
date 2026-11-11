@@ -95,3 +95,46 @@ describe("attempt controls", () => {
     expect(attemptMachine(ctx, { kind: "github", deliveryId: "d", event: { type: "checks", number: 7, headSha: "h", scope: "pr", status: "passed", failing: [] } })).toBeUndefined();
   });
 });
+
+describe("operator actions on an escalated node (FR-033)", () => {
+  const prOpen = { number: 7, url: "u", headSha: "h", state: "open" as const, openedAt: "t", changedFiles: 1, baseRef: "main", repo: "acme/mono", mergeCommit: null };
+  function escalated(): AttemptContext {
+    const base = anAttemptContext();
+    return {
+      ...base,
+      attempt: { ...base.attempt, n: 3, phase: "failed" as const, outcome: "failed" as const, pullRequests: [prOpen] },
+      node: { ...base.node, state: "escalated" as const, attempts: 3, prUpdates: 2, reviewRounds: 3, escalation: { at: "t", reason: "checks failed", slackTs: null, slackKey: "esc:att_x:3" } },
+    };
+  }
+  const action = (a: "retry" | "skip" | "cancel") => ({ kind: "node_action", action: a, by: "dev_alice", reason: "fixed the script", decisionId: "dec_9" }) as const;
+  const effectsOf = (t: AttemptTransition) => t.intents.map((i) => i.effect).sort();
+  const apply = (ctx: AttemptContext, t: AttemptTransition) => ({ ...ctx, attempt: t.attempt ?? ctx.attempt, node: t.node ?? ctx.node });
+
+  test("retry: back to eligible with a fresh set of attempts and limits; the old workspace and PR are closed; the Slack thread is told", () => {
+    const t = attemptMachine(escalated(), action("retry"))!;
+    expect(t.node).toMatchObject({ state: "eligible", escalation: null, attemptsBeforeRetry: 3, prUpdates: 0, reviewRounds: 0 });
+    expect(effectsOf(t)).toEqual(["github.close_pr", "rovara.close", "slack.reply"]);
+    const reply = t.intents.find((i) => i.effect === "slack.reply")!;
+    expect(reply.payload).toMatchObject({ replyTo: "esc:att_x:3", template: "nodeResolved", params: { action: "retried", operator: "dev_alice", reason: "fixed the script" } });
+    expect(t.decisions).toEqual([expect.objectContaining({ actor: "dev_alice", action: "retry", reason: "fixed the script" })]);
+  });
+
+  test("skip: the node is skipped, never merged, and records who skipped it", () => {
+    const t = attemptMachine(escalated(), action("skip"))!;
+    expect(t.node).toMatchObject({ state: "skipped", mergeCommit: null, skippedBy: { operator: "dev_alice", reason: "fixed the script" } });
+    expect(t.counters?.counts).toEqual({ escalated: -1, skipped: 1 });
+  });
+
+  test("cancel: the node is cancelled", () => {
+    const t = attemptMachine(escalated(), action("cancel"))!;
+    expect(t.node?.state).toBe("cancelled");
+    expect(t.intents.find((i) => i.effect === "slack.reply")?.payload).toMatchObject({ params: { action: "cancelled" } });
+  });
+
+  test("an action on a node that is not escalated (or a repeat) changes nothing", () => {
+    const ctx = escalated();
+    const t = attemptMachine(ctx, action("retry"))!;
+    expect(attemptMachine(apply(ctx, t), action("retry"))).toBeUndefined();
+    expect(attemptMachine(anAttemptContext(), action("skip"))).toBeUndefined();
+  });
+});

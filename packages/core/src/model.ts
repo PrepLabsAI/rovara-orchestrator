@@ -163,6 +163,8 @@ export interface NodeRunState {
   skippedBy: { operator: string; reason: string; at: string } | null;
   /** Dependencies that were skipped rather than merged, shown on the node page. */
   unblockedBySkip: string[];
+  /** Attempts used before the last operator retry; the attempt limit counts from here (FR-033). */
+  attemptsBeforeRetry?: number;
   version: number;
 }
 
