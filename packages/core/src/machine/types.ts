@@ -148,6 +148,10 @@ export type RunInput =
 
 export type RepoInput =
   | { kind: "main_checks"; headSha: string; status: "passed" | "failed" | "pending"; failing: string[]; confirmed: boolean }
+  /** A push to main: its new head. */
+  | { kind: "main_push"; headSha: string }
+  /** Read main's required checks afresh (the sweep sends this while a repository is paused). */
+  | { kind: "recheck_main" }
   | { kind: "schedule" }
   /** Read a PR's state from GitHub and turn it into inputs for its attempt (constitution III). */
   | { kind: "reconcile_pr"; attemptId: string };

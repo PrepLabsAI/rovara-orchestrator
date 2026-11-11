@@ -310,7 +310,8 @@ export interface Repository {
   startRate: number | null;
   rovaraFreeWorkspaces: number | null;
   rovaraProjectLimit: number | null;
-  notification: { slackTs: string } | null;
+  /** The Slack message announcing the pause, replied to when main is green again (FR-035). */
+  notification: { slackKey: string } | null;
   version: number;
 }
 

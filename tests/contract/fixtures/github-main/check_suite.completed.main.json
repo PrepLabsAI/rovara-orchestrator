@@ -1,0 +1,14 @@
+{
+  "action": "completed",
+  "check_suite": {
+    "id": 9001,
+    "head_branch": "main",
+    "head_sha": "2222222222222222222222222222222222222222",
+    "status": "completed",
+    "conclusion": "failure",
+    "app": { "id": 15368, "slug": "github-actions", "name": "GitHub Actions" },
+    "pull_requests": []
+  },
+  "repository": { "id": 1, "name": "mono", "full_name": "acme/mono", "default_branch": "main" },
+  "sender": { "login": "github-actions[bot]", "type": "Bot" }
+}

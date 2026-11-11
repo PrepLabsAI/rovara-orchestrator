@@ -49,5 +49,11 @@ export async function runSweep(deps: Deps): Promise<{ timers: number; redriven: 
     }
   }
   if (reconciles.length) await deps.queue.send(reconciles);
+
+  // A paused repository is read afresh every minute, so it resumes even if main's green check events were lost.
+  const paused = (await Promise.all(repos.map((r) => deps.repos.getRepo(r)))).filter((r) => r.paused);
+  if (paused.length) {
+    await deps.queue.send(paused.map((r) => ({ group: `repo:${r.repo}`, input: { kind: "recheck_main" }, inputId: `recheck-main:${r.repo}:${minute}` })));
+  }
   return { timers: timers.length, redriven: pending.length, passes: repos.length };
 }

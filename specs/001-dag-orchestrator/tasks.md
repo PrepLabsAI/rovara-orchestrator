@@ -241,19 +241,19 @@ conflict is updated and merged; a red main stops every start and merge until gre
 
 ### Tests for User Story 4
 
-- [ ] T094 [P] [US4] Write file-lock property tests in `packages/core/src/scheduler/gates/file-locks.test.ts`: across all runs on one repository, no two running nodes share a listed file; paths ending in `/` are ignored; a held node shows the `waitingFor` reason `files`
-- [ ] T095 [P] [US4] Write conflict transition tests in `packages/core/src/machine/handlers/conflicts.test.ts`: a PR that conflicts with main, or leaves the queue out of date, gets an update request while `prUpdates` remain and is queued again after its new head passes; out of updates escalates
-- [ ] T096 [P] [US4] Write main-health tests in `packages/core/src/repo-health.test.ts`: a failing required check on main's head pauses the repository with a Slack notification intent; green again, confirmed by a fresh read, resumes it with a thread reply
-- [ ] T097 [P] [US4] Write main-event contract tests in `tests/contract/github-main-events.test.ts` with recorded `push`, check-suite, check-run and status payloads on main in `tests/contract/fixtures/github-main/`: each maps to the expected repository input
-- [ ] T098 [P] [US4] Write update-request text tests in `packages/core/src/text/update-request.test.ts`: the request names main's head commit and asks Rovara to update the pull request from main and resolve the conflicts
-- [ ] T099 [US4] Write the monorepo fault test in `tests/fault/monorepo.test.ts` with the harness: overlapping nodes run one after the other; a forced conflict is updated and merged; with main red nothing starts or merges until green (SC-005) (depends on T037, T074)
+- [X] T094 [P] [US4] Write file-lock property tests in `packages/core/src/scheduler/gates/file-locks.test.ts`: across all runs on one repository, no two running nodes share a listed file; paths ending in `/` are ignored; a held node shows the `waitingFor` reason `files`
+- [X] T095 [P] [US4] Write conflict transition tests in `packages/core/src/machine/handlers/conflicts.test.ts`: a PR that conflicts with main, or leaves the queue out of date, gets an update request while `prUpdates` remain and is queued again after its new head passes; out of updates escalates
+- [X] T096 [P] [US4] Write main-health tests in `packages/core/src/repo-health.test.ts`: a failing required check on main's head pauses the repository with a Slack notification intent; green again, confirmed by a fresh read, resumes it with a thread reply
+- [X] T097 [P] [US4] Write main-event contract tests in `tests/contract/github-main-events.test.ts` with recorded `push`, check-suite, check-run and status payloads on main in `tests/contract/fixtures/github-main/`: each maps to the expected repository input
+- [X] T098 [P] [US4] Write update-request text tests in `packages/core/src/text/update-request.test.ts`: the request names main's head commit and asks Rovara to update the pull request from main and resolve the conflicts
+- [X] T099 [US4] Write the monorepo fault test in `tests/fault/monorepo.test.ts` with the harness: overlapping nodes run one after the other; a forced conflict is updated and merged; with main red nothing starts or merges until green (SC-005) (depends on T037, T074)
 
 ### Implementation for User Story 4
 
-- [ ] T100 [US4] Implement the file-lock gate in `packages/core/src/scheduler/gates/file-locks.ts` and lock items in `packages/store/src/file-locks.ts`: `REPO#<repo>` / `FILE#<path>` holding `{ runId, nodeId }`, written in the same transaction as the start and removed on merge, skip or cancel (depends on T094)
-- [ ] T101 [P] [US4] Write the update-request text in `packages/core/src/text/update-request.ts` (depends on T098)
-- [ ] T102 [US4] Implement the conflicts handler in `packages/core/src/machine/handlers/conflicts.ts` to pass T095 (depends on T095, T101)
-- [ ] T103 [US4] Implement main health in `packages/core/src/repo-health.ts` and `packages/store/src/repos.ts` (Repository `paused`, `pausedSince`, `mainCommit`, `notification`), the repo-health gate in `packages/core/src/scheduler/gates/repo-health.ts`, and main events in `packages/workers/src/github-events/main-push.ts` and `packages/workers/src/github-events/main-checks.ts`, replacing those stubs; main-health inputs go through the `repo:<owner/name>` group to the repository machine, which calls `repo-health`; pausing or resuming writes one enqueue intent per affected attempt (depends on T096, T097)
+- [X] T100 [US4] Implement the file-lock gate in `packages/core/src/scheduler/gates/file-locks.ts` and lock items in `packages/store/src/file-locks.ts`: `REPO#<repo>` / `FILE#<path>` holding `{ runId, nodeId }`, written in the same transaction as the start and removed on merge, skip or cancel (depends on T094)
+- [X] T101 [P] [US4] Write the update-request text in `packages/core/src/text/update-request.ts` (depends on T098)
+- [X] T102 [US4] Implement the conflicts handler in `packages/core/src/machine/handlers/conflicts.ts` to pass T095 (depends on T095, T101)
+- [X] T103 [US4] Implement main health in `packages/core/src/repo-health.ts` and `packages/store/src/repos.ts` (Repository `paused`, `pausedSince`, `mainCommit`, `notification`), the repo-health gate in `packages/core/src/scheduler/gates/repo-health.ts`, and main events in `packages/workers/src/github-events/main-push.ts` and `packages/workers/src/github-events/main-checks.ts`, replacing those stubs; main-health inputs go through the `repo:<owner/name>` group to the repository machine, which calls `repo-health`; pausing or resuming writes one enqueue intent per affected attempt (depends on T096, T097)
 
 **Checkpoint**: parallel nodes in one monorepo no longer collide, and a red main stops the line.
 
