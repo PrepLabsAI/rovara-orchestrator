@@ -1,0 +1,33 @@
+{
+  "action": "completed",
+  "check_suite": {
+    "id": 11,
+    "head_branch": "rovara/us1",
+    "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "status": "completed",
+    "conclusion": "success",
+    "app": {
+      "name": "GitHub Actions"
+    },
+    "pull_requests": [
+      {
+        "number": 7,
+        "head": {
+          "sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        "base": {
+          "ref": "main"
+        }
+      }
+    ]
+  },
+  "repository": {
+    "id": 1,
+    "full_name": "acme/mono",
+    "name": "mono",
+    "owner": {
+      "login": "acme"
+    },
+    "default_branch": "main"
+  }
+}

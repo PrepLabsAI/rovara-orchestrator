@@ -296,6 +296,13 @@ export class FakeGithub implements GithubApi {
     return this.opts.files?.[path] ?? null;
   }
 
+  async checksForSha(_repo: string, sha: string): Promise<{ status: "passed" | "failed" | "pending"; failing: string[] }> {
+    const p = [...this.pulls.values()].find((x) => x.headSha === sha);
+    if (!p) return { status: "pending", failing: [] };
+    const ci = this.opts.ci?.(p, "pr") ?? "passed";
+    return { status: ci, failing: ci === "failed" ? ["ci/test"] : [] };
+  }
+
   async requiredChecksOnMain(): Promise<{ headSha: string; status: "passed" | "failed" | "pending"; failing: string[] }> {
     return { headSha: this.mainHeadSha, status: this.mainStatus, failing: this.mainStatus === "failed" ? ["ci/test"] : [] };
   }

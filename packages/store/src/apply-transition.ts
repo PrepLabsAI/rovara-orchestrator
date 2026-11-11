@@ -1,4 +1,5 @@
 import type {
+  RecordWrite,
   Attempt,
   Counters,
   DecisionSpec,
@@ -43,6 +44,7 @@ export interface TransitionWrite {
     intents: IntentSpec[];
     decisions: DecisionSpec[];
     counters?: Counters;
+    records?: RecordWrite[];
   };
   /** Extra ops written in the same transaction (e.g. a stored event, a question record). */
   extra?: Op[];
@@ -113,6 +115,11 @@ export async function applyTransition(table: Table, w: TransitionWrite): Promise
     if (c) ops.push(c);
   }
   const { ops: iops, intents } = intentOps(w.owner, after.intents, w.now);
+  for (const r of after.records ?? []) {
+    if (r.kind === "put") ops.push({ kind: "put", item: { ...r.key, ...r.attrs } });
+    else if (r.kind === "update") ops.push({ kind: "update", key: r.key, set: r.attrs });
+    else ops.push({ kind: "delete", key: r.key });
+  }
   ops.push(...iops, ...decisionOps(w.runId, after.decisions, w.now), ...(w.extra ?? []));
   try {
     await table.transact(ops);

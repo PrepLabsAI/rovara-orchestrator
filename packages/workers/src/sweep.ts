@@ -38,5 +38,16 @@ export async function runSweep(deps: Deps): Promise<{ timers: number; redriven: 
   if (repos.length) {
     await deps.queue.send(repos.map((repo) => ({ group: `repo:${repo}`, input: { kind: "schedule" }, inputId: `sweep-sched:${repo}:${minute}` })));
   }
+
+  // Reconcile every attempt with an open PR against GitHub, in case a webhook was lost.
+  const reconciles: QueueMessage[] = [];
+  for (const run of runs) {
+    for (const n of await deps.repos.getRunNodes(run.runId)) {
+      if ((n.state === "pr_open" || n.state === "in_merge_queue") && n.currentAttempt) {
+        reconciles.push({ group: `repo:${run.repo}`, input: { kind: "reconcile_pr", attemptId: n.currentAttempt }, inputId: `sweep-reconcile:${n.currentAttempt}:${minute}` });
+      }
+    }
+  }
+  if (reconciles.length) await deps.queue.send(reconciles);
   return { timers: timers.length, redriven: pending.length, passes: repos.length };
 }

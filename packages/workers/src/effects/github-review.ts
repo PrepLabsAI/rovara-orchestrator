@@ -1,4 +1,8 @@
-import { notImplemented, type Executor } from "./types.js";
+import type { Executor } from "./types.js";
 
-/** Stub: implemented by its user story. */
-export const githubReview: Executor = notImplemented("github.resolve_thread");
+/** github.resolve_thread: resolve a review thread Rovara fixed or answered (FR-045). Resolving a resolved thread is a no-op. */
+export const githubReview: Executor = async (intent, deps) => {
+  const threadId = String(intent.payload.threadId);
+  await deps.github.resolveThread(threadId);
+  return { resolved: threadId };
+};

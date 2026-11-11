@@ -157,8 +157,11 @@ export class Repositories {
     return (await this.table.queryIndex("ACTIVE_RUNS", repo ? { prefix: `${repo}#` } : {})).map(decodeRun);
   }
 
+  /** Every run, newest first, from the run list items (`RUNS` / `<startedAt>#<runId>`). */
   async listRuns(limit = 50): Promise<Run[]> {
-    return (await this.table.queryIndex("RUNS", { limit })).map(decodeRun);
+    const ids = await this.table.query<{ runId: string }>("RUNS", "", { limit, descending: true });
+    const runs = await Promise.all(ids.map((i) => this.getRun(i.runId)));
+    return runs.filter((r): r is Run => !!r);
   }
 
   async getRunNodes(runId: string): Promise<NodeRunState[]> {

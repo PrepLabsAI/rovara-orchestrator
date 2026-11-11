@@ -60,6 +60,8 @@ export interface GithubApi {
   closePull(repo: string, number: number): Promise<void>;
   readFile(repo: string, path: string, ref: string): Promise<string | null>;
   requiredChecksOnMain(repo: string): Promise<{ headSha: string; status: "passed" | "failed" | "pending"; failing: string[] }>;
+  /** Required checks on a PR head commit. */
+  checksForSha(repo: string, sha: string): Promise<{ status: "passed" | "failed" | "pending"; failing: string[] }>;
 }
 
 export interface SlackApi {
