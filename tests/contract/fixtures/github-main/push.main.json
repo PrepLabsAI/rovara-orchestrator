@@ -1,0 +1,12 @@
+{
+  "ref": "refs/heads/main",
+  "before": "1111111111111111111111111111111111111111",
+  "after": "2222222222222222222222222222222222222222",
+  "created": false,
+  "deleted": false,
+  "forced": false,
+  "head_commit": { "id": "2222222222222222222222222222222222222222", "message": "US1: sign up (#7)", "timestamp": "2026-11-11T00:00:00Z" },
+  "repository": { "id": 1, "name": "mono", "full_name": "acme/mono", "default_branch": "main" },
+  "pusher": { "name": "rovara-orchestrator[bot]" },
+  "sender": { "login": "rovara-orchestrator[bot]", "type": "Bot" }
+}

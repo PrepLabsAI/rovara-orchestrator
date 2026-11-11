@@ -80,7 +80,7 @@ async function consumeAttempt(deps: Deps, attemptId: string, input: AttemptInput
       intents.push(
         enqueue({ group: `run:${ctx.run.runId}`, input: { kind: "node_finished", nodeId: ctx.node.nodeId, state: after } }, `fin:${ctx.run.runId}:${ctx.node.nodeId}`),
       );
-      extra.push(...unlockOps(ctx.run.repo, ctx.dagNode));
+      extra.push(...(await unlockOps(deps.table, ctx.run.repo, ctx.run.runId, [ctx.node.nodeId])));
     }
   }
   const written = await applyTransition(deps.table, {
@@ -102,6 +102,9 @@ async function consumeRun(deps: Deps, runId: string, input: RunInput, inputId: s
   if (!t) return { outcome: "noop", intents: [] };
   const intents = [...t.intents];
   if (t.run && t.run.state !== ctx.run.state) intents.push(schedulePassIntent(ctx.run.repo, ctx.now));
+  // Nodes the run machine ends directly (a run cancel) free the files they hold.
+  const ended = (t.nodes ?? []).filter((n) => FINAL_NODE_STATES.includes(n.state)).map((n) => n.nodeId);
+  const extra = await unlockOps(deps.table, ctx.run.repo, runId, ended);
   const written = await applyTransition(deps.table, {
     owner: ownerPk.run(runId),
     inputId,
@@ -109,6 +112,7 @@ async function consumeRun(deps: Deps, runId: string, input: RunInput, inputId: s
     now: ctx.now,
     before: { run: ctx.run, nodes: ctx.nodes },
     after: { ...t, intents },
+    extra,
   });
   return { outcome: "applied", intents: written };
 }
@@ -123,7 +127,9 @@ async function consumeRepo(deps: Deps, repo: string, input: RepoInput, inputId: 
     return { outcome: intents.length ? "applied" : "noop", intents };
   }
   const ctx = await loadRepoContext(deps, repo);
-  const t = machines.repository(ctx, input);
+  // A recheck is a fresh read of main's required checks, judged like any check event (FR-044).
+  const judged: RepoInput = input.kind === "recheck_main" ? { kind: "main_checks", ...(await deps.github.requiredChecksOnMain(repo)), confirmed: true } : input;
+  const t = machines.repository(ctx, judged);
   if (!t) return { outcome: "noop", intents: [] };
   const intents = [...t.intents];
   if (t.repo && t.repo.paused !== ctx.repo.paused) intents.push(schedulePassIntent(repo, ctx.now));
