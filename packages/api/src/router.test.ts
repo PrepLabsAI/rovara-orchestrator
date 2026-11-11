@@ -52,7 +52,7 @@ describe("operator API frame", () => {
 
   test("unknown routes are 404; stub routes answer 501 once authenticated", async () => {
     expect((await handle(deps, req("GET", "/v1/nope", aliceToken))).status).toBe(404);
-    const r = await handle(deps, req("GET", "/v1/runs/run_1/nodes/US1", aliceToken));
+    const r = await handle(deps, req("GET", "/v1/repos/acme/mono", aliceToken));
     expect(r.status).toBe(501);
     expect(r.body).toMatchObject({ error: { code: "NOT_IMPLEMENTED" } });
   });

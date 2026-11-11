@@ -1,6 +1,6 @@
 import { fileURLToPath } from "node:url";
 import { Duration, Stack, type StackProps } from "aws-cdk-lib";
-import { HttpApi, HttpMethod } from "aws-cdk-lib/aws-apigatewayv2";
+import { CorsHttpMethod, HttpApi, HttpMethod } from "aws-cdk-lib/aws-apigatewayv2";
 import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
 import { Rule, Schedule } from "aws-cdk-lib/aws-events";
 import { LambdaFunction } from "aws-cdk-lib/aws-events-targets";
@@ -19,6 +19,8 @@ export interface ServiceStackProps extends StackProps {
   /** Rovara deployment the orchestrator is an adapter of. */
   rovara?: { url: string; channel: string; tenant: string; space: string };
   statusPageUrl?: string;
+  /** The status page's origin (WebStack.origin): the only origin the API allows, for its GET routes. */
+  pageOrigin?: string;
   /** Bedrock model the answerer uses (research R8). */
   modelId?: string;
 }
@@ -115,7 +117,12 @@ export class ServiceStack extends Stack {
     );
     new Rule(this, "SweepEveryMinute", { schedule: Schedule.rate(Duration.minutes(1)), targets: [new LambdaFunction(sweep)] });
 
-    this.api = new HttpApi(this, "Api", { apiName: `rovara-orch-${stage.name}` });
+    this.api = new HttpApi(this, "Api", {
+      apiName: `rovara-orch-${stage.name}`,
+      ...(props.pageOrigin
+        ? { corsPreflight: { allowOrigins: [props.pageOrigin], allowMethods: [CorsHttpMethod.GET], allowHeaders: ["authorization"] } }
+        : {}),
+    });
     this.api.addRoutes({ path: "/rovara/events", methods: [HttpMethod.POST], integration: new HttpLambdaIntegration("RovaraEvents", rovaraIngress) });
     this.api.addRoutes({ path: "/github/events", methods: [HttpMethod.POST], integration: new HttpLambdaIntegration("GithubEvents", githubIngress) });
     this.api.addRoutes({ path: "/v1/{proxy+}", methods: [HttpMethod.ANY], integration: new HttpLambdaIntegration("OperatorApi", api) });

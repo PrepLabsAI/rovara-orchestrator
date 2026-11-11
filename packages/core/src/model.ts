@@ -137,6 +137,13 @@ export interface Run {
   startedAt: string;
   endedAt: string | null;
   pausedFor: "operator" | "cost" | "lost_access" | null;
+  /** The Slack message announcing a cost or lost-access pause, replied to when it is resolved (FR-035). */
+  pauseNotice?: { slackKey: string } | null;
+  /**
+   * Bumped each time Rovara stops accepting work for the acting-for operator. Rovara has already
+   * used the event ids it refused, so Rovara actions sent after the pause carry a new suffix.
+   */
+  accessGeneration?: number;
   tracesExpireSetAt: string | null;
   version: number;
 }

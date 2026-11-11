@@ -1,5 +1,6 @@
 import type { Attempt, Intent, QueueMessage } from "@rovara-orch/core";
 import { runIntent } from "./intent-runner.js";
+import { expireEndedTraces } from "./sweep-trace-expiry.js";
 import type { Deps } from "./ports.js";
 
 /** Intents younger than this are left to the table stream; older pending ones are re-driven. */
@@ -55,5 +56,6 @@ export async function runSweep(deps: Deps): Promise<{ timers: number; redriven: 
   if (paused.length) {
     await deps.queue.send(paused.map((r) => ({ group: `repo:${r.repo}`, input: { kind: "recheck_main" }, inputId: `recheck-main:${r.repo}:${minute}` })));
   }
+  await expireEndedTraces(deps);
   return { timers: timers.length, redriven: pending.length, passes: repos.length };
 }

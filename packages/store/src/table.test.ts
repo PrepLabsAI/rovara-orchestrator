@@ -81,6 +81,12 @@ describe("Table", () => {
     expect(() => mergeOps([{ kind: "put", item: { ...key } }, { kind: "update", key, set: { x: 1 } }])).toThrow(/combine/);
   });
 
+  test("query with no prefix returns every item under the pk, and pages after a cursor", async () => {
+    await table.transact(["000000000001", "000000000002", "000000000003"].map((sk) => ({ kind: "put" as const, item: { pk: "ALL#1", sk } })));
+    expect((await table.query("ALL#1", "")).map((i) => i.sk)).toEqual(["000000000001", "000000000002", "000000000003"]);
+    expect((await table.query("ALL#1", "", { after: "000000000001", limit: 1 })).map((i) => i.sk)).toEqual(["000000000002"]);
+  });
+
   test("query pages by sk prefix", async () => {
     await table.transact(
       Array.from({ length: 5 }, (_, i) => ({ kind: "put" as const, item: { pk: "DAG#d", sk: `NODE#${i}`, i } })),

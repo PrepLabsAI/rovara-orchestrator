@@ -2,13 +2,14 @@ import { randomUUID } from "node:crypto";
 import { Option, type Command } from "commander";
 import { expectOk, print, type CliContext } from "../context.js";
 
-/** run pause | resume | cancel <runId> --reason (FR-050). Take-over is added by US5. */
+/** run pause | resume | cancel | take-over <runId> --reason (FR-050, FR-057). */
 export function register(program: Command, ctx: () => CliContext): void {
   const run = program.commands.find((c) => c.name() === "run") ?? program.command("run");
-  for (const action of ["pause", "resume", "cancel"] as const) {
+  const what = { pause: "Pause a run", resume: "Resume a run", cancel: "Cancel a run", "take-over": "Act for this run as yourself from now on" };
+  for (const action of ["pause", "resume", "cancel", "take-over"] as const) {
     run
       .command(`${action} <runId>`)
-      .description(`${action[0]!.toUpperCase()}${action.slice(1)} a run`)
+      .description(what[action])
       .addOption(new Option("--reason <text>", "why (recorded with the decision)").makeOptionMandatory())
       .action(async (runId: string, o: { reason: string }) => {
         const c = ctx();

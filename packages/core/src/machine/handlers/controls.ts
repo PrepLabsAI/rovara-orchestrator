@@ -1,11 +1,23 @@
 import { ACTIVE_NODE_STATES, FINAL_ATTEMPT_PHASES, FINAL_NODE_STATES, type NodeRunState } from "../../model.js";
-import { enqueueMany, mergeCounters, moveNode, type QueueMessage } from "../helpers.js";
+import { enqueue, enqueueMany, mergeCounters, moveNode, type QueueMessage } from "../helpers.js";
 import { prNumberFromUrl } from "./happy-path.js";
 import { Draft } from "../steps.js";
-import type { AttemptContext, AttemptHandler, AttemptInput, AttemptTransition, Counters, NodeActionInput, RunHandler, RunTransition } from "../types.js";
+import { ORCHESTRATOR, type AttemptContext, type AttemptHandler, type AttemptInput, type AttemptTransition, type Counters, type NodeActionInput, type RunContext, type RunHandler, type RunTransition } from "../types.js";
+import type { IntentSpec, Run } from "../../model.js";
 
-/** Attempt-level controls: being cancelled by the run (FR-050). Release of a held approval is in happy-path. */
+/**
+ * Attempt-level controls: being cancelled by the run (FR-050), and Rovara saying the acting-for
+ * operator must link their sign-in, which pauses the run (FR-057). Release of a held approval is in
+ * happy-path.
+ */
 export const controls: AttemptHandler = (ctx, input) => {
+  if (input.kind === "rovara" && input.type === "link_required") {
+    const actor = input.data.actor as { userId?: string } | undefined;
+    const operator = actor?.userId ?? ctx.run.actingFor;
+    const d = new Draft(ctx);
+    d.intents.push(enqueue({ group: `run:${ctx.run.runId}`, input: { kind: "lost_access", operator } }, `lost:${ctx.run.runId}:${operator}:${input.eventId}`));
+    return d.done();
+  }
   if (input.kind !== "control" || input.action !== "cancel") return undefined;
   if (FINAL_ATTEMPT_PHASES.includes(ctx.attempt.phase) || FINAL_NODE_STATES.includes(ctx.node.state)) return undefined;
   const d = new Draft(ctx);
@@ -76,10 +88,46 @@ export function nodeActions(ctx: AttemptContext, input: NodeActionInput): Attemp
   return d.done();
 }
 
-/** Run-level controls: pause, resume and cancel (FR-050). Take-over and pauses for cost and access are US5. */
+/** A reply in the thread of the run's pause notice, saying how and by whom it was resolved (FR-035). */
+function resolvedReply(run: Run, how: string, operator: string, decisionId: string): IntentSpec[] {
+  const key = run.pauseNotice?.slackKey;
+  if (!key) return [];
+  return [{ effect: "slack.reply", key: `reply:${key}:${decisionId}`, payload: { replyTo: key, template: "runResolved", params: { how, operator } } }];
+}
+
+/** Pause the run for a cause no operator chose, with one Slack message (FR-052, FR-057). */
+function autoPause(ctx: RunContext, pausedFor: "cost" | "lost_access", template: string, params: Record<string, unknown>, reason: string, patch: Partial<Run> = {}): RunTransition {
+  const key = `run-paused:${ctx.run.runId}:${pausedFor}:${ctx.now}`;
+  return {
+    run: { ...ctx.run, ...patch, state: "paused", pausedFor, pauseNotice: { slackKey: key } },
+    intents: [{ effect: "slack.post", key, payload: { template, params: { runId: ctx.run.runId, ...params } } }],
+    decisions: [{ actor: ORCHESTRATOR, action: "pause", reason }],
+  };
+}
+
+/** Run-level controls: pause, resume, cancel and take-over (FR-050, FR-057), and the cost and access pauses. */
 export const runControls: RunHandler = (ctx, input) => {
   const run = ctx.run;
   switch (input.kind) {
+    case "take_over": {
+      if (run.state === "cancelled" || run.state === "complete") return undefined;
+      const resumes = run.state === "paused" && run.pausedFor !== "operator";
+      return {
+        run: { ...run, actingFor: input.by, ...(resumes ? { state: "running" as const, pausedFor: null, pauseNotice: null } : {}) },
+        intents: resumes ? resolvedReply(run, "taken over", input.by, input.decisionId) : [],
+        decisions: [{ actor: input.by, action: "take_over", reason: input.reason, detail: { decisionId: input.decisionId, from: run.actingFor } }],
+      };
+    }
+    case "lost_access": {
+      if (run.state !== "running" || input.operator !== run.actingFor) return undefined;
+      return autoPause(ctx, "lost_access", "lostAccess", { operator: input.operator }, `Rovara no longer accepts work for ${input.operator}`, {
+        accessGeneration: (run.accessGeneration ?? 0) + 1,
+      });
+    }
+    case "cost_limit": {
+      if (run.state !== "running" || run.costUsd < run.costLimitUsd) return undefined;
+      return autoPause(ctx, "cost", "costLimit", { limitUsd: run.costLimitUsd }, `the run reached its cost limit of $${run.costLimitUsd}`);
+    }
     case "pause": {
       if (run.state !== "running") return undefined;
       return {
@@ -91,8 +139,8 @@ export const runControls: RunHandler = (ctx, input) => {
     case "resume": {
       if (run.state !== "paused") return undefined;
       return {
-        run: { ...run, state: "running", pausedFor: null },
-        intents: [],
+        run: { ...run, state: "running", pausedFor: null, pauseNotice: null },
+        intents: resolvedReply(run, "resumed", input.by, input.decisionId),
         decisions: [{ actor: input.by, action: "resume", reason: input.reason, detail: { decisionId: input.decisionId } }],
       };
     }
@@ -116,9 +164,12 @@ export const runControls: RunHandler = (ctx, input) => {
         }
       }
       const t: RunTransition = {
-        run: { ...run, state: "cancelled", endedAt: ctx.now, pausedFor: null },
+        run: { ...run, state: "cancelled", endedAt: ctx.now, pausedFor: null, pauseNotice: null },
         nodes: direct,
-        intents: messages.length ? [enqueueMany(messages, `cancel-fanout:${run.runId}:${input.decisionId}`)] : [],
+        intents: [
+          ...(messages.length ? [enqueueMany(messages, `cancel-fanout:${run.runId}:${input.decisionId}`)] : []),
+          ...resolvedReply(run, "cancelled", input.by, input.decisionId),
+        ],
         decisions: [{ actor: input.by, action: "cancel", reason: input.reason, detail: { decisionId: input.decisionId } }],
         counters,
         records: [{ kind: "delete", key: { pk: `DAGRUN#${run.dagId}`, sk: "ACTIVE" } }],

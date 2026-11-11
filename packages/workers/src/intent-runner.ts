@@ -1,10 +1,14 @@
 import { enqueue, type Intent } from "@rovara-orch/core";
 import { ConditionFailed, gsi, intentOps, type Op } from "@rovara-orch/store";
 import { EXECUTORS } from "./effects/registry.js";
+import { Deferred } from "./effects/deferred.js";
 import type { Executor } from "./effects/types.js";
+
+export { Deferred };
 import type { Deps } from "./ports.js";
 
 export const MAX_TRIES = 8;
+
 
 /** Exponential back-off: 10 s, 20 s, 40 s ... capped at 30 minutes. */
 export function backoffMs(tries: number): number {
@@ -27,7 +31,7 @@ export async function runIntent(
   deps: Deps,
   ref: { pk: string; sk: string },
   executors: Record<string, Executor> = EXECUTORS,
-): Promise<"done" | "retry" | "failed" | "skipped"> {
+): Promise<"done" | "retry" | "failed" | "skipped" | "deferred"> {
   const intent = await deps.table.get<Intent>(ref);
   if (!intent || intent.status !== "pending") return "skipped";
   const now = deps.clock.now();
@@ -45,10 +49,19 @@ export async function runIntent(
     ]);
     return "done";
   } catch (e) {
+    if (e instanceof Deferred) {
+      const nextTryAt = new Date(now.getTime() + e.retryInMs).toISOString();
+      await deps.table.transact([
+        { kind: "update", key: ref, set: { nextTryAt, lastError: e.message, ...gsi.pendingIntent(nextTryAt, ref.pk, ref.sk) }, ifExists: true },
+      ]);
+      return "deferred";
+    }
     const tries = intent.tries + 1;
     const error = e instanceof Error ? e.message : String(e);
     deps.log?.({ event: "intent.failed_try", effect: intent.effect, key: intent.key, tries, error });
-    if (tries >= MAX_TRIES) {
+    // A Slack notification is never given up on: it stays pending, and visible on the run, until delivered (FR-035).
+    const keepTrying = intent.effect === "slack.post" || intent.effect === "slack.reply";
+    if (tries >= MAX_TRIES && !keepTrying) {
       const ops: Op[] = [
         { kind: "update", key: ref, set: { status: "failed", tries, lastError: error, gsi1pk: undefined, gsi1sk: undefined }, ifExists: true },
       ];

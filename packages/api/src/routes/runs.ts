@@ -8,6 +8,7 @@ import {
   type RetryLimits,
   type Run,
 } from "@rovara-orch/core";
+import type { Intent } from "@rovara-orch/core";
 import { ConditionFailed, decisionOps, encodeNode, encodeRun, intentOps, keys, type Op } from "@rovara-orch/store";
 import { ApiError } from "../errors.js";
 import type { ApiDeps, Route } from "../types.js";
@@ -131,7 +132,23 @@ export async function runView(deps: ApiDeps, runId: string) {
   );
   items.sort((a, b) => a.order - b.order);
   const { version: _v, ...rest } = run;
-  return { ...rest, nodes: items.map(({ order: _o, ...i }) => i) };
+  return { ...rest, nodes: items.map(({ order: _o, ...i }) => i), notifications: await undelivered(deps, runId) };
+}
+
+/** Slack notifications for the run that have not reached Slack yet; they stay visible until they do (FR-035). */
+async function undelivered(deps: ApiDeps, runId: string) {
+  const pending = await deps.table.queryIndex<Intent & { lastError?: string }>("PENDING_INTENT", {});
+  return pending
+    .filter((i) => (i.effect === "slack.post" || i.effect === "slack.reply") && (i.payload.params as { runId?: string } | undefined)?.runId === runId)
+    .map((i) => ({
+      key: i.key,
+      nodeId: (i.payload.params as { nodeId?: string }).nodeId ?? null,
+      template: i.payload.template ?? null,
+      delivered: false,
+      tries: i.tries,
+      lastError: i.lastError ?? null,
+      since: i.createdAt,
+    }));
 }
 
 export const routes: Route[] = [
