@@ -41,15 +41,15 @@ files. The few files two stories both edit are listed under Dependencies.
 
 **Purpose**: Repository, tooling and CI
 
-- [ ] T001 Create the root workspace: `package.json` with npm workspaces `packages/*` and `infra`, scripts `lint`, `typecheck`, `test`, `test:contract`, `test:fault`, `test:e2e`, `load`, `deploy`, `db:up`; `tsconfig.base.json` (strict, target ES2023, module and moduleResolution NodeNext); `.nvmrc` containing `22.19.0`
-- [ ] T002 [P] Add ESLint (typescript-eslint, flat config) and Prettier in `eslint.config.js` and `.prettierrc`
-- [ ] T003 [P] Add Vitest projects in `vitest.config.ts`: one per package for unit tests, plus `infra/test`, `tests/contract`, `tests/integration` and `tests/fault`; exclude `tests/e2e` and `tests/load` from the default run
-- [ ] T004 [P] Add `.gitignore` (node_modules, dist, cdk.out, `.cache/`) and a `README.md` stating what the orchestrator does, linking the spec folder, and listing the test commands
-- [ ] T005 Scaffold the 13 workspace packages from the plan (core, store, dag-import, rovara, github, slack, answerer, identity, api, workers, cli, web, testkit): for each, `packages/<name>/package.json` (name `@rovara-orch/<name>`, `"type": "module"`), `packages/<name>/tsconfig.json` extending the base, and `packages/<name>/src/index.ts` (depends on T001)
-- [ ] T006 [P] Add `docker-compose.yml` running `amazon/dynamodb-local` on port 8000 for local and fault tests
-- [ ] T007 [P] Add CI in `.github/workflows/ci.yml`: Node 22.19, `npm ci`, lint, typecheck, unit, infra, contract and fault tests, with DynamoDB Local as a service container
-- [ ] T008 [P] Create the CDK app skeleton: `infra/package.json`, `infra/cdk.json`, `infra/bin/app.ts` and `infra/lib/stage.ts` defining stages `test`, `load` and `prod`, with a `prod` flag the identity package reads
-- [ ] T009 [P] Write runtime guidance in `CLAUDE.md` at the repository root: the seven constitution principles in one line each, test-first rule, package map, commands, and that Rovara is reached only through its published interfaces
+- [X] T001 Create the root workspace: `package.json` with npm workspaces `packages/*` and `infra`, scripts `lint`, `typecheck`, `test`, `test:contract`, `test:fault`, `test:e2e`, `load`, `deploy`, `db:up`; `tsconfig.base.json` (strict, target ES2023, module and moduleResolution NodeNext); `.nvmrc` containing `22.19.0`
+- [X] T002 [P] Add ESLint (typescript-eslint, flat config) and Prettier in `eslint.config.js` and `.prettierrc`
+- [X] T003 [P] Add Vitest projects in `vitest.config.ts`: one per package for unit tests, plus `infra/test`, `tests/contract`, `tests/integration` and `tests/fault`; exclude `tests/e2e` and `tests/load` from the default run
+- [X] T004 [P] Add `.gitignore` (node_modules, dist, cdk.out, `.cache/`) and a `README.md` stating what the orchestrator does, linking the spec folder, and listing the test commands
+- [X] T005 Scaffold the 13 workspace packages from the plan (core, store, dag-import, rovara, github, slack, answerer, identity, api, workers, cli, web, testkit): for each, `packages/<name>/package.json` (name `@rovara-orch/<name>`, `"type": "module"`), `packages/<name>/tsconfig.json` extending the base, and `packages/<name>/src/index.ts` (depends on T001)
+- [X] T006 [P] Add `docker-compose.yml` running `amazon/dynamodb-local` on port 8000 for local and fault tests
+- [X] T007 [P] Add CI in `.github/workflows/ci.yml`: Node 22.19, `npm ci`, lint, typecheck, unit, infra, contract and fault tests, with DynamoDB Local as a service container
+- [X] T008 [P] Create the CDK app skeleton: `infra/package.json`, `infra/cdk.json`, `infra/bin/app.ts` and `infra/lib/stage.ts` defining stages `test`, `load` and `prod`, with a `prod` flag the identity package reads
+- [X] T009 [P] Write runtime guidance in `CLAUDE.md` at the repository root: the seven constitution principles in one line each, test-first rule, package map, commands, and that Rovara is reached only through its published interfaces
 
 ---
 
