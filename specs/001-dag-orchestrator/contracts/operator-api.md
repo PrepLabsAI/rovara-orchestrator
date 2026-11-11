@@ -12,6 +12,12 @@ Errors: `{ "error": { "code": "<UPPER_SNAKE>", "message": "<sentence>" } }` with
 Write routes take an `Idempotency-Key` header; a repeat with the same key returns the first
 result.
 
+## Operator
+
+| Method and path | Body | Result |
+|---|---|---|
+| `GET /v1/me` | | `{ id, name, isAdmin }`: the signed-in operator, for `rovara-orch whoami` |
+
 ## DAGs (US1)
 
 | Method and path | Body | Result |
