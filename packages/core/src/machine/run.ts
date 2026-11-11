@@ -1,8 +1,10 @@
 import { runCapacity } from "./handlers/capacity.js";
 import { runControls } from "./handlers/controls.js";
+import { runAccounting } from "./run-accounting.js";
 import type { RunContext, RunHandler, RunInput, RunTransition } from "./types.js";
 
 export const RUN_HANDLERS: ReadonlyArray<[string, RunHandler]> = [
+  ["accounting", runAccounting],
   ["controls", runControls],
   ["capacity", runCapacity],
 ];

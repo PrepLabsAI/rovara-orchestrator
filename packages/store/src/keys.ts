@@ -34,6 +34,7 @@ export const keys = {
   repoFile: (repo: string, path: string) => k(`REPO#${repo}`, `FILE#${path}`),
   repoFilesPrefix: (repo: string) => ({ pk: `REPO#${repo}`, skPrefix: "FILE#" }),
   settings: () => k("SETTINGS", "GLOBAL"),
+  runListItem: (startedAt: string, runId: string) => k("RUNS", `${startedAt}#${runId}`),
   idempotency: (scope: string, key: string) => k(`IDEMP#${scope}`, key),
 } as const;
 

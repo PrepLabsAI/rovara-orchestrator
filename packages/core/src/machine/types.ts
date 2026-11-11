@@ -138,7 +138,9 @@ export type RunInput =
 
 export type RepoInput =
   | { kind: "main_checks"; headSha: string; status: "passed" | "failed" | "pending"; failing: string[]; confirmed: boolean }
-  | { kind: "schedule" };
+  | { kind: "schedule" }
+  /** Read a PR's state from GitHub and turn it into inputs for its attempt (constitution III). */
+  | { kind: "reconcile_pr"; attemptId: string };
 
 /** A queue message: one input for one group. */
 export type WorkMessage =
@@ -181,6 +183,13 @@ export interface RepoContext {
 
 // ---------- Transitions ----------
 
+/** Lookup and record items a transition writes alongside its entities (described as data; the store writes them). */
+export type RecordWrite =
+  | { kind: "put"; key: { pk: string; sk: string }; attrs: Record<string, unknown> }
+  /** Set these fields, creating the item if absent, keeping its other fields. */
+  | { kind: "update"; key: { pk: string; sk: string }; attrs: Record<string, unknown> }
+  | { kind: "delete"; key: { pk: string; sk: string } };
+
 /** Atomic additions to the Run item, written outside the version check. */
 export interface Counters {
   counts?: Partial<Record<NodeState, number>>;
@@ -193,6 +202,7 @@ export interface AttemptTransition {
   intents: IntentSpec[];
   decisions: DecisionSpec[];
   counters?: Counters;
+  records?: RecordWrite[];
 }
 
 export interface RunTransition {
@@ -202,6 +212,7 @@ export interface RunTransition {
   intents: IntentSpec[];
   decisions: DecisionSpec[];
   counters?: Counters;
+  records?: RecordWrite[];
 }
 
 export interface RepoTransition {

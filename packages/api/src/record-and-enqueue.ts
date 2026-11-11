@@ -1,7 +1,14 @@
 import { enqueue, newId, type DecisionSpec, type WorkMessage } from "@rovara-orch/core";
 import { ConditionFailed, decisionOps, intentOps, type Op } from "@rovara-orch/store";
 import { storedResult, storeResultOp } from "./idempotency.js";
-import type { ApiResponse, RouteContext } from "./types.js";
+import type { ApiDeps, ApiResponse } from "./types.js";
+
+/** What recording an operator action needs: the store, the clock, who, and the Idempotency-Key. */
+export interface RecordContext {
+  deps: Pick<ApiDeps, "table" | "clock">;
+  operator: { id: string };
+  idempotencyKey: string | undefined;
+}
 
 /**
  * Write the decision record, the idempotency record and an enqueue intent for the input in ONE
@@ -9,19 +16,20 @@ import type { ApiResponse, RouteContext } from "./types.js";
  * doubles the input. Answers `202 { decisionId }`.
  */
 export async function recordAndEnqueue(
-  ctx: RouteContext,
-  input: { runId: string | null; decision: DecisionSpec; message: WorkMessage; extra?: Op[] },
+  ctx: RecordContext,
+  input: { runId: string | null; decision: DecisionSpec; message: WorkMessage | ((decisionId: string) => WorkMessage); extra?: Op[] },
 ): Promise<ApiResponse> {
   const prior = await storedResult(ctx.deps, ctx.operator.id, ctx.idempotencyKey);
   if (prior) return prior;
   const now = ctx.deps.clock.now().toISOString();
   const decisionId = newId("dec");
   const key = `api:${ctx.operator.id}:${ctx.idempotencyKey ?? decisionId}`;
-  const owner = input.message.group.startsWith("run:") ? `RUN#${input.message.group.slice(4)}` : `API#${ctx.operator.id}`;
+  const message = typeof input.message === "function" ? input.message(decisionId) : input.message;
+  const owner = message.group.startsWith("run:") ? `RUN#${message.group.slice(4)}` : `API#${ctx.operator.id}`;
   const res: ApiResponse = { status: 202, body: { decisionId } };
   const ops: Op[] = [
     ...decisionOps(input.runId, [{ ...input.decision, detail: { ...input.decision.detail, decisionId } }], now),
-    ...intentOps(owner, [enqueue(input.message, key)], now).ops,
+    ...intentOps(owner, [enqueue(message, key)], now).ops,
     ...(input.extra ?? []),
   ];
   if (ctx.idempotencyKey) ops.push(storeResultOp(ctx.deps, ctx.operator.id, ctx.idempotencyKey, res));

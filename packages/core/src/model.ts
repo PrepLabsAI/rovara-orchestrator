@@ -145,6 +145,8 @@ export interface Escalation {
   at: string;
   reason: string;
   slackTs: string | null;
+  /** Intent key of the Slack post, so a later thread reply can find it. */
+  slackKey: string | null;
 }
 
 export interface NodeRunState {
@@ -177,6 +179,10 @@ export interface PullRequestRef {
   headSha: string | null;
   state: "open" | "closed" | "merged";
   openedAt: string;
+  changedFiles: number | null;
+  baseRef: string | null;
+  repo: string | null;
+  mergeCommit: string | null;
 }
 
 export interface CheckReportRecord {
@@ -203,7 +209,9 @@ export interface Attempt {
   outcomeReason: string | null;
   due: { quietAt: string | null; reviewAt: string | null; retryAt: string | null };
   /** Review state of the current PR head. */
-  review: { headSha: string | null; reviewedAt: string | null; rerequestedAt: string | null; unresolved: number };
+  review: { headSha: string | null; reviewedAt: string | null; rerequestedAt: string | null; unresolved: number; sent: string[] };
+  /** Required CI on the current PR head, and in the merge queue. */
+  ci: { headSha: string | null; pr: "pending" | "passed" | "failed"; queue: "none" | "pending" | "passed" | "failed"; failing: string[] };
   costUsd: number;
   startedAt: string;
   endedAt: string | null;

@@ -1,0 +1,18 @@
+{
+  "action": "checks_requested",
+  "merge_group": {
+    "head_sha": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "head_ref": "refs/heads/gh-readonly-queue/main/pr-7-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "base_ref": "refs/heads/main",
+    "base_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  },
+  "repository": {
+    "id": 1,
+    "full_name": "acme/mono",
+    "name": "mono",
+    "owner": {
+      "login": "acme"
+    },
+    "default_branch": "main"
+  }
+}

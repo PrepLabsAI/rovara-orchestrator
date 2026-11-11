@@ -21,6 +21,7 @@ import {
 import { applyTransition, DuplicateInput, ownerPk, unlockOps, VersionConflict } from "@rovara-orch/store";
 import { loadAttemptContext, loadRepoContext, loadRunContext } from "./contexts.js";
 import type { Deps } from "./ports.js";
+import { reconcile } from "./github-reconcile.js";
 import { runSchedulerPass } from "./scheduler.js";
 
 export interface Machines {
@@ -116,6 +117,10 @@ async function consumeRepo(deps: Deps, repo: string, input: RepoInput, inputId: 
   if (input.kind === "schedule") {
     const intents = await runSchedulerPass(deps, repo);
     return { outcome: "applied", intents };
+  }
+  if (input.kind === "reconcile_pr") {
+    const intents = await reconcile(deps, repo, input.attemptId);
+    return { outcome: intents.length ? "applied" : "noop", intents };
   }
   const ctx = await loadRepoContext(deps, repo);
   const t = machines.repository(ctx, input);

@@ -88,6 +88,10 @@ export class Harness {
   private deliveryCounter = 0;
   /** Every queue message ever consumed with its outcome, for assertions. */
   readonly consumed: Array<{ inputId: string; outcome: string }> = [];
+  /** Effects the table stream does not deliver for now (the sweep's re-drive still runs them). */
+  private readonly held = new Set<string>();
+  /** One-shot crashes after the consumer commits a matching message, before it acknowledges. */
+  private readonly crashes: Array<(m: QueueMessage) => boolean> = [];
 
   private constructor(
     readonly table: Table,
@@ -287,7 +291,7 @@ export class Harness {
   /** The table stream: run every pending intent that is due. */
   private async runPendingIntents(): Promise<boolean> {
     const now = this.clock.now().toISOString();
-    const due = await this.table.queryIndex<Intent>("PENDING_INTENT", { upTo: `${now}#￿` });
+    const due = (await this.table.queryIndex<Intent>("PENDING_INTENT", { upTo: `${now}#￿` })).filter((i) => !this.held.has(i.effect));
     for (const i of due) await runIntent(this.deps, i, this.executors);
     return due.length > 0;
   }
@@ -303,7 +307,9 @@ export class Harness {
       const r = await consume(this.deps, msg, this.opts.machines ?? DEFAULT_MACHINES);
       this.consumed.push({ inputId: msg.inputId, outcome: r.outcome });
       did = true;
-      if (crashP && this.rng() < crashP) {
+      const planned = this.crashes.findIndex((match) => match(msg));
+      if (planned >= 0) this.crashes.splice(planned, 1);
+      if (planned >= 0 || (crashP && this.rng() < crashP)) {
         this.counts.add("restart"); // committed, but the message was not acknowledged: redelivered
         continue;
       }
@@ -354,6 +360,39 @@ export class Harness {
       const r = await this.repos.getRun(runId);
       return r?.state === "complete" || r?.state === "cancelled";
     }, o);
+  }
+
+  /** The stop switch, through the operator API's own logic (FR-051). */
+  async setStopSwitch(on: boolean, reason = "test"): Promise<void> {
+    const { setStopSwitch } = await import("@rovara-orch/api");
+    await setStopSwitch(this.deps, "dev_op", on, reason);
+  }
+
+  /** Nothing in flight: no callbacks or webhooks waiting, no queued messages, no pending intents. */
+  async settled(): Promise<boolean> {
+    if (this.rovaraPipe.size || this.githubPipe.size || this.queueDepth) return false;
+    return (await this.table.queryIndex("PENDING_INTENT", { limit: 1 })).length === 0;
+  }
+
+  /** Stop the table stream delivering intents for these effects until `release`. */
+  hold(...effects: Intent["effect"][]): void {
+    effects.forEach((e) => this.held.add(e));
+  }
+
+  release(...effects: Intent["effect"][]): void {
+    effects.forEach((e) => this.held.delete(e));
+  }
+
+  /** The next time a message matching `match` is consumed, stop after the commit, before the acknowledgement. */
+  crashAfterConsuming(match: (m: QueueMessage) => boolean): void {
+    this.crashes.push(match);
+  }
+
+  /** Pause, resume or cancel a run through the operator API's own logic (FR-050). */
+  async controlRun(runId: string, kind: "pause" | "resume" | "cancel", reason = "test", idempotencyKey?: string): Promise<string> {
+    const { controlRun } = await import("@rovara-orch/api");
+    const r = await controlRun({ deps: this.deps, operator: { id: "dev_op" }, idempotencyKey }, runId, kind, kind, reason);
+    return (r.body as { decisionId: string }).decisionId;
   }
 
   faultCounts(): Record<FaultKind, number> {
