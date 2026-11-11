@@ -395,6 +395,13 @@ export class Harness {
     return (r.body as { decisionId: string }).decisionId;
   }
 
+  /** Retry, skip or cancel an escalated node through the operator API's own logic (FR-033). */
+  async nodeAction(runId: string, nodeId: string, action: "retry" | "skip" | "cancel", reason = "test"): Promise<string> {
+    const { nodeAction } = await import("@rovara-orch/api");
+    const r = await nodeAction({ deps: this.deps, operator: { id: "dev_op" }, idempotencyKey: undefined }, runId, nodeId, action, reason);
+    return (r.body as { decisionId: string }).decisionId;
+  }
+
   faultCounts(): Record<FaultKind, number> {
     return { ...this.counts.counts };
   }

@@ -2,7 +2,7 @@ import { ACTIVE_NODE_STATES, FINAL_ATTEMPT_PHASES, FINAL_NODE_STATES, type NodeR
 import { enqueueMany, mergeCounters, moveNode, type QueueMessage } from "../helpers.js";
 import { prNumberFromUrl } from "./happy-path.js";
 import { Draft } from "../steps.js";
-import type { AttemptContext, AttemptHandler, AttemptInput, AttemptTransition, Counters, RunHandler, RunTransition } from "../types.js";
+import type { AttemptContext, AttemptHandler, AttemptInput, AttemptTransition, Counters, NodeActionInput, RunHandler, RunTransition } from "../types.js";
 
 /** Attempt-level controls: being cancelled by the run (FR-050). Release of a held approval is in happy-path. */
 export const controls: AttemptHandler = (ctx, input) => {
@@ -37,6 +37,42 @@ export function latePrAfterCancel(ctx: AttemptContext, input: AttemptInput): Att
   const d = new Draft(ctx);
   d.attempt.pullRequests.push({ number, url, headSha: null, state: "closed", openedAt: ctx.now, changedFiles: null, baseRef: null, repo: null, mergeCommit: null });
   d.intent("github.close_pr", `closepr:${ctx.dag.repo}:${number}`, { repo: ctx.dag.repo, number });
+  return d.done();
+}
+
+const RESOLVED = { retry: "retried", skip: "skipped", cancel: "cancelled" } as const;
+
+/**
+ * An operator's retry, skip or cancel of an escalated node (FR-033). Each closes the failed
+ * attempt's workspace and open PR, replies in the escalation's Slack thread (FR-035), and records
+ * who chose it and why. Retry gives the node a fresh set of attempts and PR limits; skip completes
+ * it without a merge, shown as skipped.
+ */
+export function nodeActions(ctx: AttemptContext, input: NodeActionInput): AttemptTransition | undefined {
+  if (ctx.node.state !== "escalated" || ctx.node.currentAttempt !== ctx.attempt.attemptId) return undefined;
+  const d = new Draft(ctx);
+  const a = d.attempt;
+  d.intent("rovara.close", `${a.attemptId}.close`, {});
+  for (const pr of a.pullRequests.filter((p) => p.state === "open")) {
+    d.intent("github.close_pr", `closepr:${ctx.dag.repo}:${pr.number}`, { repo: ctx.dag.repo, number: pr.number });
+    pr.state = "closed";
+  }
+  const slackKey = ctx.node.escalation?.slackKey;
+  if (slackKey) {
+    d.intents.push({
+      effect: "slack.reply",
+      key: `reply:${slackKey}:${input.decisionId}`,
+      payload: { attemptId: a.attemptId, replyTo: slackKey, template: "nodeResolved", params: { action: RESOLVED[input.action], operator: input.by, reason: input.reason } },
+    });
+  }
+  if (input.action === "retry") {
+    d.move("eligible", { escalation: null, waitingFor: null, attemptsBeforeRetry: ctx.node.attempts, prUpdates: 0, reviewRounds: 0 });
+  } else if (input.action === "skip") {
+    d.move("skipped", { escalation: null, waitingFor: null, skippedBy: { operator: input.by, reason: input.reason, at: ctx.now } });
+  } else {
+    d.move("cancelled", { escalation: null, waitingFor: null });
+  }
+  d.decide(input.action, input.reason, { decisionId: input.decisionId }, input.by);
   return d.done();
 }
 

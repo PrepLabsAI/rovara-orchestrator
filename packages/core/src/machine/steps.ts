@@ -92,3 +92,35 @@ export function reviewDue(now: string): string {
 export function quietDue(ctx: AttemptContext): string {
   return addMinutes(ctx.now, ctx.run.retry.quietMinutes);
 }
+
+/** Whether the node may start another attempt; an operator retry gives it a fresh set (FR-030, FR-033). */
+export function attemptsLeft(d: Draft): boolean {
+  return d.node.attempts < d.ctx.run.retry.attempts + (d.node.attemptsBeforeRetry ?? 0);
+}
+
+/**
+ * End this attempt and let the scheduler start a new one in a new conversation (FR-031): its
+ * workspace is closed, and its open PR closed. The node goes back to `eligible`.
+ */
+export function abandon(d: Draft, reason: string): void {
+  const a = d.attempt;
+  d.intent("rovara.close", `${a.attemptId}.close`, {});
+  for (const pr of a.pullRequests.filter((p) => p.state === "open")) {
+    d.intent("github.close_pr", `closepr:${d.ctx.dag.repo}:${pr.number}`, { repo: d.ctx.dag.repo, number: pr.number });
+    pr.state = "closed";
+  }
+  a.phase = "abandoned";
+  a.outcome = "abandoned";
+  a.outcomeReason = reason;
+  a.endedAt = d.ctx.now;
+  a.due = { quietAt: null, reviewAt: null, retryAt: null };
+  d.move("eligible", { waitingFor: null });
+  d.decide("retry", `${reason}; starting attempt ${d.node.attempts + 1}`);
+}
+
+/** A failed attempt: a new one while attempts remain, else escalate (FR-031, FR-032). */
+export function failAttempt(d: Draft, reason: string): void {
+  if (attemptsLeft(d)) abandon(d, reason);
+  else escalate(d, `${reason}; no attempts left`);
+}
+

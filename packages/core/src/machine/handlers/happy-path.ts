@@ -45,6 +45,7 @@ function onRovara(ctx: AttemptContext, input: RovaraInput) {
     case "check_report": {
       if (data.status !== "passed") return undefined; // failed / unknown: failures
       a.checkReports.push({ status: "passed", at: ctx.now, text: String(data.text ?? "") });
+      if (d.node.state === "checks_failed") d.move(currentPr(a) ? "pr_open" : "running");
       if (!currentPr(a)) {
         if (a.phase !== "pr_requested") {
           a.phase = "pr_requested";
@@ -97,6 +98,7 @@ function onGithub(ctx: AttemptContext, e: GithubAttemptEvent) {
   switch (e.type) {
     case "pr_opened":
     case "pr_synchronize": {
+      if (e.changedFiles === 0) return undefined; // no changes: failures
       const headChanged = pr.headSha !== e.headSha;
       pr.headSha = e.headSha;
       pr.changedFiles = e.changedFiles;

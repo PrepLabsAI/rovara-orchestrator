@@ -50,9 +50,9 @@ retry with the same `Idempotency-Key` never loses or doubles the action.
 |---|---|---|
 | `GET /v1/runs/{runId}/nodes/{nodeId}` | | node state, every attempt with phases, check reports, questions and answers, review comments, pull requests, and decision records |
 | `GET /v1/runs/{runId}/nodes/{nodeId}/trace?attempt=&after=&limit=` | | `{ steps: [{ sequence, at, kind, payload }], next, live }`, oldest first; `after` is a sequence; `live` is true while the attempt runs (FR-055) |
-| `POST /v1/runs/{runId}/nodes/{nodeId}/retry` | `{ reason }` | `200`; only from `escalated` |
-| `POST /v1/runs/{runId}/nodes/{nodeId}/skip` | `{ reason }` | `200`; only from `escalated`; shown as skipped, never merged |
-| `POST /v1/runs/{runId}/nodes/{nodeId}/cancel` | `{ reason }` | `200` |
+| `POST /v1/runs/{runId}/nodes/{nodeId}/retry` | `{ reason }` | `202 { decisionId }`; only from `escalated` (`409 not_escalated` otherwise); a fresh set of attempts |
+| `POST /v1/runs/{runId}/nodes/{nodeId}/skip` | `{ reason }` | `202 { decisionId }`; only from `escalated`; shown as skipped, never merged |
+| `POST /v1/runs/{runId}/nodes/{nodeId}/cancel` | `{ reason }` | `202 { decisionId }`; only from `escalated` |
 
 ## Global (US5, US6)
 

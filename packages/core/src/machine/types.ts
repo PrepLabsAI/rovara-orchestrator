@@ -120,7 +120,17 @@ export interface IntentFailedInput {
   error: string;
 }
 
+/** An operator's choice for an escalated node (FR-033), sent to its current attempt's group. */
+export interface NodeActionInput {
+  kind: "node_action";
+  action: "retry" | "skip" | "cancel";
+  by: string;
+  reason: string;
+  decisionId: string;
+}
+
 export type AttemptInput =
+  | NodeActionInput
   | RovaraInput
   | GithubInput
   | TimerInput

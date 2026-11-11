@@ -215,17 +215,17 @@ unrelated node merges, and an operator's retry after a fix lets the run complete
 
 ### Tests for User Story 3
 
-- [ ] T086 [P] [US3] Write failure transition tests in `packages/core/src/machine/handlers/failures.test.ts`: a `failed` or `unknown` check report sends a fix request while `fixRequests` remain; then a new attempt in a new conversation while `attempts` remain, with a close intent for the abandoned attempt's workspace; a workspace failure or conversation `error` starts a new attempt; out of attempts escalates with a Slack notification intent; `admin` and `other` approval requests escalate; a quiet attempt escalates (until Rovara#437); a PR closed without merge by a person fails the attempt; a PR merged by a person counts as merged; a PR with no changes fails the attempt with reason `no_changes`; an `approval_request` that arrives with no approve actions (the adapter is registered with step-up) escalates with the reason "adapter registered with step-up"
-- [ ] T087 [P] [US3] Write node-action API tests in `packages/api/src/routes/nodes-actions.test.ts`: retry, skip and cancel work only from `escalated` (409 otherwise), require a reason, write a decision record, and add a Slack thread-reply intent; a skipped node shows as `skipped`, never `merged`
-- [ ] T088 [P] [US3] Write CLI tests in `packages/cli/src/commands/node.test.ts` against a stub API: `node retry`, `skip` and `cancel` with `--reason` required, and exit code 1 on a 409
-- [ ] T089 [P] [US3] Write fix-request text tests in `packages/core/src/text/fix-request.test.ts`: every failing check is listed with its output, and nothing from passing checks
-- [ ] T090 [US3] Write the escalation fault test in `tests/fault/escalation.test.ts` with the harness: one node always failing escalates after its limits, its dependent stays `waiting`, an unrelated node merges, and a retry after the script is fixed completes the run (SC-006) (depends on T037, T074)
+- [X] T086 [P] [US3] Write failure transition tests in `packages/core/src/machine/handlers/failures.test.ts`: a `failed` or `unknown` check report sends a fix request while `fixRequests` remain; then a new attempt in a new conversation while `attempts` remain, with a close intent for the abandoned attempt's workspace; a workspace failure or conversation `error` starts a new attempt; out of attempts escalates with a Slack notification intent; `admin` and `other` approval requests escalate; a quiet attempt escalates (until Rovara#437); a PR closed without merge by a person fails the attempt; a PR merged by a person counts as merged; a PR with no changes fails the attempt with reason `no_changes`; an `approval_request` that arrives with no approve actions (the adapter is registered with step-up) escalates with the reason "adapter registered with step-up"
+- [X] T087 [P] [US3] Write node-action API tests in `packages/api/src/routes/nodes-actions.test.ts`: retry, skip and cancel work only from `escalated` (409 otherwise), require a reason, write a decision record, and add a Slack thread-reply intent; a skipped node shows as `skipped`, never `merged`
+- [X] T088 [P] [US3] Write CLI tests in `packages/cli/src/commands/node.test.ts` against a stub API: `node retry`, `skip` and `cancel` with `--reason` required, and exit code 1 on a 409
+- [X] T089 [P] [US3] Write fix-request text tests in `packages/core/src/text/fix-request.test.ts`: every failing check is listed with its output, and nothing from passing checks
+- [X] T090 [US3] Write the escalation fault test in `tests/fault/escalation.test.ts` with the harness: one node always failing escalates after its limits, its dependent stays `waiting`, an unrelated node merges, and a retry after the script is fixed completes the run (SC-006) (depends on T037, T074)
 
 ### Implementation for User Story 3
 
-- [ ] T091 [P] [US3] Write the fix-request text (the failing checks and their output from the report) in `packages/core/src/text/fix-request.ts` (depends on T089)
-- [ ] T092 [US3] Implement the failures handler in `packages/core/src/machine/handlers/failures.ts` to pass T086 (depends on T086, T091)
-- [ ] T093 [US3] Implement node retry, skip and cancel in `packages/api/src/routes/nodes-actions.ts` and `node retry|skip|cancel <runId> <nodeId> --reason` in `packages/cli/src/commands/node.ts`, replacing both stubs (depends on T087, T088, T092)
+- [X] T091 [P] [US3] Write the fix-request text (the failing checks and their output from the report) in `packages/core/src/text/fix-request.ts` (depends on T089)
+- [X] T092 [US3] Implement the failures handler in `packages/core/src/machine/handlers/failures.ts` to pass T086 (depends on T086, T091)
+- [X] T093 [US3] Implement node retry, skip and cancel in `packages/api/src/routes/nodes-actions.ts` and `node retry|skip|cancel <runId> <nodeId> --reason` in `packages/cli/src/commands/node.ts`, replacing both stubs (depends on T087, T088, T092)
 
 **Checkpoint**: one failing node no longer stalls a run.
 

@@ -1,6 +1,6 @@
 import { capacity } from "./handlers/capacity.js";
 import { conflicts } from "./handlers/conflicts.js";
-import { controls, latePrAfterCancel } from "./handlers/controls.js";
+import { controls, latePrAfterCancel, nodeActions } from "./handlers/controls.js";
 import { failures } from "./handlers/failures.js";
 import { happyPath } from "./handlers/happy-path.js";
 import { review } from "./handlers/review.js";
@@ -31,6 +31,8 @@ function stale(ctx: AttemptContext, input: AttemptInput): boolean {
 
 /** The attempt machine (queue group `att:<attemptId>`). */
 export function attemptMachine(ctx: AttemptContext, input: AttemptInput): AttemptTransition | undefined {
+  // An escalated node's attempt has ended; only the operator's choice moves it on (FR-033).
+  if (input.kind === "node_action") return nodeActions(ctx, input);
   const late = ctx.node.currentAttempt === ctx.attempt.attemptId ? latePrAfterCancel(ctx, input) : undefined;
   if (late) return late;
   if (stale(ctx, input)) return undefined;
