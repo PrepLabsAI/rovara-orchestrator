@@ -23,6 +23,7 @@
     "db:down": "docker stop rovara-orch-dynamodb"
   },
   "devDependencies": {
+    "@types/aws-lambda": "^8.10.164",
     "@types/node": "^26.6.6",
     "eslint": "^10.14.0",
     "fast-check": "^4.10.2",
