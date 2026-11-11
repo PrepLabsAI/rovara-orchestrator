@@ -1,0 +1,228 @@
+{
+  "events": [
+    {
+      "version": 1,
+      "id": "evt_fixture000000000000",
+      "channel": "orchestrator",
+      "conversation": {
+        "channel": "orchestrator",
+        "tenant": "test",
+        "space": "mono",
+        "thread": "run_01JTEST0000000000000000000.US1.a1"
+      },
+      "createdAt": "2026-11-11T00:00:00.000Z",
+      "type": "ack",
+      "data": {
+        "inReplyTo": "att_1.brief"
+      }
+    },
+    {
+      "version": 1,
+      "id": "evt_fixture000000000001",
+      "channel": "orchestrator",
+      "conversation": {
+        "channel": "orchestrator",
+        "tenant": "test",
+        "space": "mono",
+        "thread": "run_01JTEST0000000000000000000.US1.a1"
+      },
+      "createdAt": "2026-11-11T00:00:00.000Z",
+      "type": "message",
+      "data": {
+        "text": "Working on it."
+      }
+    },
+    {
+      "version": 1,
+      "id": "evt_fixture000000000002",
+      "channel": "orchestrator",
+      "conversation": {
+        "channel": "orchestrator",
+        "tenant": "test",
+        "space": "mono",
+        "thread": "run_01JTEST0000000000000000000.US1.a1"
+      },
+      "createdAt": "2026-11-11T00:00:00.000Z",
+      "type": "progress",
+      "data": {
+        "text": "Running the checks."
+      }
+    },
+    {
+      "version": 1,
+      "id": "evt_fixture000000000003",
+      "channel": "orchestrator",
+      "conversation": {
+        "channel": "orchestrator",
+        "tenant": "test",
+        "space": "mono",
+        "thread": "run_01JTEST0000000000000000000.US1.a1"
+      },
+      "createdAt": "2026-11-11T00:00:00.000Z",
+      "type": "question",
+      "data": {
+        "text": "Should tokens expire after 24 hours or 7 days?",
+        "choices": [
+          "24 hours",
+          "7 days"
+        ]
+      }
+    },
+    {
+      "version": 1,
+      "id": "evt_fixture000000000004",
+      "channel": "orchestrator",
+      "conversation": {
+        "channel": "orchestrator",
+        "tenant": "test",
+        "space": "mono",
+        "thread": "run_01JTEST0000000000000000000.US1.a1"
+      },
+      "createdAt": "2026-11-11T00:00:00.000Z",
+      "type": "approval_request",
+      "data": {
+        "text": "Plan ready.",
+        "kind": "plan_approval",
+        "requestId": "8a6e0804-2bd0-4672-b79d-d97027f9071a",
+        "expectedRevision": 1,
+        "artifactDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "taskUrl": "https://rovara.test/tasks/t1",
+        "actions": [
+          {
+            "decision": "APPROVE",
+            "label": "Approve"
+          }
+        ]
+      }
+    },
+    {
+      "version": 1,
+      "id": "evt_fixture000000000005",
+      "channel": "orchestrator",
+      "conversation": {
+        "channel": "orchestrator",
+        "tenant": "test",
+        "space": "mono",
+        "thread": "run_01JTEST0000000000000000000.US1.a1"
+      },
+      "createdAt": "2026-11-11T00:00:00.000Z",
+      "type": "check_report",
+      "data": {
+        "text": "3 passed, 0 failed.",
+        "status": "passed"
+      }
+    },
+    {
+      "version": 1,
+      "id": "evt_fixture000000000006",
+      "channel": "orchestrator",
+      "conversation": {
+        "channel": "orchestrator",
+        "tenant": "test",
+        "space": "mono",
+        "thread": "run_01JTEST0000000000000000000.US1.a1"
+      },
+      "createdAt": "2026-11-11T00:00:00.000Z",
+      "type": "pr",
+      "data": {
+        "url": "https://github.com/acme/mono/pull/42",
+        "title": "US1: sign up"
+      }
+    },
+    {
+      "version": 1,
+      "id": "evt_fixture000000000007",
+      "channel": "orchestrator",
+      "conversation": {
+        "channel": "orchestrator",
+        "tenant": "test",
+        "space": "mono",
+        "thread": "run_01JTEST0000000000000000000.US1.a1"
+      },
+      "createdAt": "2026-11-11T00:00:00.000Z",
+      "type": "done",
+      "data": {
+        "inReplyTo": "att_1.brief"
+      }
+    },
+    {
+      "version": 1,
+      "id": "evt_fixture000000000008",
+      "channel": "orchestrator",
+      "conversation": {
+        "channel": "orchestrator",
+        "tenant": "test",
+        "space": "mono",
+        "thread": "run_01JTEST0000000000000000000.US1.a1"
+      },
+      "createdAt": "2026-11-11T00:00:00.000Z",
+      "type": "error",
+      "data": {
+        "code": "workspace_limit",
+        "text": "The workspace limit is reached."
+      }
+    },
+    {
+      "version": 1,
+      "id": "evt_fixture000000000009",
+      "channel": "orchestrator",
+      "conversation": {
+        "channel": "orchestrator",
+        "tenant": "test",
+        "space": "mono",
+        "thread": "run_01JTEST0000000000000000000.US1.a1"
+      },
+      "createdAt": "2026-11-11T00:00:00.000Z",
+      "type": "link_required",
+      "data": {
+        "linkUrl": "https://rovara.test/link/abc",
+        "expiresAt": "2026-11-11T00:10:00.000Z",
+        "actor": {
+          "channel": "orchestrator",
+          "tenant": "test",
+          "userId": "dev_1"
+        }
+      }
+    }
+  ],
+  "message": {
+    "version": 2,
+    "channel": "orchestrator",
+    "eventId": "att_run_01JTEST0000000000000000000.US1.a1.brief",
+    "conversation": {
+      "channel": "orchestrator",
+      "tenant": "test",
+      "space": "mono",
+      "thread": "run_01JTEST0000000000000000000.US1.a1"
+    },
+    "actor": {
+      "channel": "orchestrator",
+      "tenant": "test",
+      "userId": "dev_1"
+    },
+    "text": "Implement US1.",
+    "receivedAt": "2026-11-11T00:00:00.000Z"
+  },
+  "decision": {
+    "version": 1,
+    "channel": "orchestrator",
+    "eventId": "att_run_01JTEST0000000000000000000.US1.a1.approve",
+    "conversation": {
+      "channel": "orchestrator",
+      "tenant": "test",
+      "space": "mono",
+      "thread": "run_01JTEST0000000000000000000.US1.a1"
+    },
+    "actor": {
+      "channel": "orchestrator",
+      "tenant": "test",
+      "userId": "dev_1"
+    },
+    "requestId": "8a6e0804-2bd0-4672-b79d-d97027f9071a",
+    "expectedRevision": 1,
+    "artifactDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "decision": "APPROVE",
+    "reason": "The orchestrator approves plans for run run_01J node US1.",
+    "receivedAt": "2026-11-11T00:00:00.000Z"
+  }
+}
