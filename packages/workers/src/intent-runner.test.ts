@@ -8,7 +8,7 @@ import type { Executor } from "./effects/types.js";
 const endpoint = process.env.DYNAMODB_ENDPOINT ?? "http://localhost:8000";
 const tableName = `t-runner-${process.pid}-${Date.now()}`;
 let table: Table;
-let now = new Date("2026-11-11T00:00:00.000Z");
+const now = new Date("2026-11-11T00:00:00.000Z");
 
 beforeAll(async () => {
   await createTable(tableName, endpoint);
