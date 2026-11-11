@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { ChannelClient, RovaraRequestFailed, Throttled, WorkspaceLimit } from "./client.js";
+import { ActorNotLinked, ChannelClient, RovaraRequestFailed, Throttled, WorkspaceLimit } from "./client.js";
 import { newSecret, verify } from "./signing.js";
 
 const secret = newSecret();
@@ -55,6 +55,14 @@ describe("ChannelClient", () => {
       send(client(() => Response.json({ error: { code: "WORKSPACE_LIMIT", message: "limit" } }, { status: 409 }))),
     ).rejects.toBeInstanceOf(WorkspaceLimit);
     await expect(send(client(() => Response.json({ error: { code: "INVALID", message: "no" } }, { status: 422 })))).rejects.toBeInstanceOf(RovaraRequestFailed);
+  });
+
+  test("an operator who has not linked their sign-in: 202 link_required is ActorNotLinked, not success", async () => {
+    const seen: Request[] = [];
+    const linkRequired = () => new Response(JSON.stringify({ status: "link_required" }), { status: 202, headers: { "content-type": "application/json" } });
+    await expect(client(linkRequired, seen).sendMessage({ conversation, actor, text: "hello", eventId: "att_1.brief" })).rejects.toBeInstanceOf(ActorNotLinked);
+    const accepted = () => new Response(JSON.stringify({ status: "queued" }), { status: 202, headers: { "content-type": "application/json" } });
+    await expect(client(accepted, seen).sendMessage({ conversation, actor, text: "hello", eventId: "att_1.brief2" })).resolves.toBeUndefined();
   });
 
   test("refuses to send a request that does not match Rovara's schema", async () => {

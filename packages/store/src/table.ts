@@ -233,14 +233,16 @@ export class Table {
   async query<T = Item>(pk: string, skPrefix: string, opts: QueryOptions = {}): Promise<T[]> {
     const out: T[] = [];
     let start: Record<string, unknown> | undefined;
-    const names: Record<string, string> = { "#pk": "pk", "#sk": "sk" };
+    const names: Record<string, string> = { "#pk": "pk" };
     const values: Record<string, unknown> = { ":pk": pk };
     let cond = "#pk = :pk";
     if (opts.after !== undefined) {
       cond += " AND #sk > :after";
+      names["#sk"] = "sk";
       values[":after"] = opts.after;
     } else if (skPrefix) {
       cond += " AND begins_with(#sk, :p)";
+      names["#sk"] = "sk";
       values[":p"] = skPrefix;
     }
     do {

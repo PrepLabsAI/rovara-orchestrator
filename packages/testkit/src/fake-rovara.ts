@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { parseAttemptThread } from "@rovara-orch/core";
-import { ChannelDecisionSchema, InboundMessageSchema, type ConversationRef } from "@rovara-orch/rovara";
+import { ActorNotLinked, ChannelDecisionSchema, InboundMessageSchema, type ConversationRef } from "@rovara-orch/rovara";
 import type { ActorRef, RovaraApi } from "@rovara-orch/workers";
 import type { FakeGithub } from "./fake-github.js";
 
@@ -52,6 +52,9 @@ export class FakeRovara implements RovaraApi {
   readonly conversations = new Map<string, Conversation>();
   readonly seenEventIds = new Set<string>();
   readonly duplicateRequests: string[] = [];
+  /** Operators whose Rovara sign-in is not linked to the orchestrator's channel. */
+  private readonly unlinked = new Set<string>();
+  private readonly linkNotices = new Set<string>();
   private startsByNode = new Map<string, number>();
   private sink: (e: OutgoingEvent) => void = () => {};
   private eventCounter = 0;
@@ -60,6 +63,25 @@ export class FakeRovara implements RovaraApi {
     private readonly github: FakeGithub,
     private readonly behaviours: Record<string, Behaviour> = {},
   ) {}
+
+  unlink(userId: string): void {
+    this.unlinked.add(userId);
+  }
+
+  link(userId: string): void {
+    this.unlinked.delete(userId);
+    this.linkNotices.delete(userId);
+  }
+
+  /** Like Rovara: the event id is used first, then an unlinked actor gets one link_required notice and nothing runs. */
+  private refuseUnlinked(conversation: ConversationRef, actor: ActorRef): void {
+    if (!this.unlinked.has(actor.userId)) return;
+    if (!this.linkNotices.has(actor.userId)) {
+      this.linkNotices.add(actor.userId);
+      this.emit(this.conv(conversation), "link_required", { linkUrl: "https://rovara.test/link/abc", expiresAt: new Date(Date.now() + 3_600_000).toISOString(), actor });
+    }
+    throw new ActorNotLinked(actor.userId);
+  }
 
   onEvent(sink: (e: OutgoingEvent) => void): void {
     this.sink = sink;
@@ -96,6 +118,7 @@ export class FakeRovara implements RovaraApi {
       return;
     }
     this.seenEventIds.add(input.eventId);
+    this.refuseUnlinked(input.conversation, input.actor);
     const c = this.conv(input.conversation);
     c.received.push({ kind: "message", text: input.text });
     if (c.behaviour.silent || c.stage === "closed" || c.stage === "cancelled") return;
@@ -153,6 +176,7 @@ export class FakeRovara implements RovaraApi {
       return;
     }
     this.seenEventIds.add(input.eventId);
+    this.refuseUnlinked(input.conversation, input.actor);
     const c = this.conv(input.conversation);
     c.received.push({ kind: "decision", text: input.decision });
     if (c.stage !== "awaiting_decision" || input.decision !== "APPROVE") return;

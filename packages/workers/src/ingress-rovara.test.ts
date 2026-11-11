@@ -74,7 +74,7 @@ describe("handleRovaraEvent", () => {
 
   test("hooks add their writes to the same transaction", async () => {
     const t = await setup();
-    const hook = () => [{ kind: "put" as const, item: { pk: `TRACE#${attempt.attemptId}`, sk: "000000000001", text: "working" } }];
+    const hook = async () => [{ kind: "put" as const, item: { pk: `TRACE#${attempt.attemptId}`, sk: "000000000001", text: "working" } }];
     await handleRovaraEvent(t.deps, secret, signed(JSON.stringify(event())), [hook]);
     expect(await t.deps.table.get({ pk: `TRACE#${attempt.attemptId}`, sk: "000000000001" })).toBeDefined();
   });

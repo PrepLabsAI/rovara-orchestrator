@@ -3,6 +3,7 @@ import type { Intent } from "@rovara-orch/core";
 import { encodeAttempt, encodeDag, encodeDagNode, encodeRun, intentOps } from "@rovara-orch/store";
 import { aDag, aDagNode, anAttempt, aRun } from "@rovara-orch/core/testing";
 import { createHarness, type Harness } from "@rovara-orch/testkit";
+import { runIntent } from "../intent-runner.js";
 import { EXECUTORS } from "./registry.js";
 
 let h: Harness | undefined;
@@ -73,6 +74,31 @@ describe("effect executors", () => {
     await twice(h, "github.enqueue", `enqueue:${number}:${head}`, { attemptId: attempt.attemptId, repo: h.github.repo, number, headSha: head });
     expect(h.github.enqueueCalls).toHaveLength(0);
     expect(h.github.merges).toHaveLength(0);
+  });
+
+  test("Rovara refusing work for the operator: nothing is lost, the run is told, and the message goes out under a new id after a take-over", async () => {
+    const { h, run, attempt } = await setup();
+    h.rovara.unlink("dev_alice");
+    const { intents, ops } = intentOps(`ATT#${attempt.attemptId}`, [{ effect: "rovara.message", key: `${attempt.attemptId}.brief`, payload: { attemptId: attempt.attemptId, text: "Implement it." } }], "2026-11-11T00:00:00.000Z");
+    await h.table.transact(ops);
+    expect(await runIntent(h.deps, intents[0]!)).toBe("deferred");
+    const stored = (await h.table.get<Intent>(intents[0]!))!;
+    expect(stored).toMatchObject({ status: "pending", tries: 0 });
+    // The run is told its operator lost access.
+    const pending = await h.table.queryIndex<Intent>("PENDING_INTENT", {});
+    const told = pending.find((i) => i.effect === "queue.enqueue")!;
+    expect(told.payload.messages).toEqual([expect.objectContaining({ group: `run:${run.runId}`, input: { kind: "lost_access", operator: "dev_alice" } })]);
+    // While the run is paused for access nothing is sent at all.
+    await h.table.transact([{ kind: "put", item: encodeRun({ ...run, state: "paused", pausedFor: "lost_access", accessGeneration: 1 }) }]);
+    expect(await runIntent(h.deps, stored)).toBe("deferred");
+    // Bob takes over: the message reaches Rovara once, for Bob, with a new event id.
+    await h.table.transact([{ kind: "put", item: encodeRun({ ...run, state: "running", pausedFor: null, actingFor: "dev_bob", accessGeneration: 1 }) }]);
+    const sent: Array<{ eventId: string; actor: string }> = [];
+    const send = h.rovara.sendMessage.bind(h.rovara);
+    h.rovara.sendMessage = async (i) => (sent.push({ eventId: i.eventId, actor: i.actor.userId }), send(i));
+    expect(await runIntent(h.deps, stored)).toBe("done");
+    expect(sent).toEqual([{ eventId: `${attempt.attemptId}.brief.g1`, actor: "dev_bob" }]);
+    expect(h.rovara.conversations.get(attempt.conversation.thread)!.received.filter((r) => r.text === "Implement it.")).toHaveLength(1);
   });
 
   test("the model executor asks the model once, then sends the answer and the cost to the attempt", async () => {

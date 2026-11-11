@@ -29,6 +29,7 @@ function onRovara(ctx: AttemptContext, input: RovaraInput): AttemptTransition | 
       return d.done();
     }
     case "approval_request": {
+      if (typeof data.taskUrl === "string") a.rovaraTaskUrl = data.taskUrl;
       if (data.kind === "admin") escalate(d, "Rovara asks for an administrator's confirmation", "adminRequest");
       else if (data.kind !== "plan_approval") escalate(d, `Rovara asks for a confirmation the orchestrator does not give (${String(data.kind)})`);
       else escalate(d, "adapter registered with step-up");

@@ -54,7 +54,7 @@ export async function handleRovaraEvent(
   const storeUnder = known ? attemptId! : `unknown:${event.conversation.thread}`;
   ops.push({ kind: "put", item: { ...keys.event(storeUnder, now, event.id), entityType: "EVENT", event, receivedAt: now } });
   if (known) {
-    for (const hook of hooks) ops.push(...hook(event, attemptId!, now));
+    for (const hook of hooks) ops.push(...(await hook(deps, event, attemptId!, now)));
     const input: RovaraInput = { kind: "rovara", eventId: event.id, type: event.type, createdAt: event.createdAt, data: event.data as Record<string, unknown> };
     ops.push(...intentOps(`ATT#${attemptId}`, [enqueue({ group: `att:${attemptId}`, input }, event.id)], now).ops);
   } else {

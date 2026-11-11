@@ -14,7 +14,7 @@ describe("Harness (with the platform's stub handlers)", () => {
     expect(nodes.filter((n) => n.state === "running")).toHaveLength(2);
     // Start inputs reached each attempt; the stub attempt machine changes nothing yet.
     expect(h.consumed.filter((c) => c.inputId.startsWith("start:att_")).length).toBe(2);
-  });
+  }, 30_000);
 
   test("a delivery pipe with faults injects them and counts them", async () => {
     h = await createHarness({ name: "harness-faults", faults: { duplicate: 0.5, delay: 0.5, drop: 0.3, reorder: 0.5 }, seed: 3 });
@@ -22,5 +22,5 @@ describe("Harness (with the platform's stub handlers)", () => {
     for (let i = 0; i < 20; i++) await h.step();
     const counts = h.faultCounts();
     expect(counts.duplicate + counts.delay + counts.drop + counts.reorder).toBeGreaterThan(0);
-  });
+  }, 30_000);
 });

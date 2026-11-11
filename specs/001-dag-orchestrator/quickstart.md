@@ -46,7 +46,9 @@ is refused with `spec_dirty` (US1 scenarios 1 to 5).
 ## 3. TEST stage: a 6-node run end to end
 
 ```bash
-npm run deploy -- --stage test
+npm run deploy -- --stage test           # prints the API URL and the status page URL
+VITE_API_URL=<api url> npm run -w packages/web build
+npm run deploy -- --stage test           # again: uploads the built status page
 rovara-orch login                         # Rovara sign-in (development identity until Rovara#442)
 rovara-orch dag import units-6node.json   # Setup -> Foundational -> US1, US2, US3 -> Polish
 rovara-orch run start <dagId> --concurrency 3 --cost-limit 50

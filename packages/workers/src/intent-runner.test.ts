@@ -73,6 +73,17 @@ describe("runIntent", () => {
     expect(report?.effect).toBe("queue.enqueue");
   });
 
+  test("a Slack notification that cannot be delivered is retried for as long as it takes, and stays pending (FR-035)", async () => {
+    const intent = await writeIntent("k-slack", "slack.post");
+    const fail: Executor = async () => {
+      throw new Error("Slack is unreachable");
+    };
+    for (let i = 1; i <= MAX_TRIES + 3; i++) expect(await runIntent(deps(), intent, { "slack.post": fail })).toBe("retry");
+    const s = await table.get<Intent & { lastError: string }>(intent);
+    expect(s).toMatchObject({ status: "pending", lastError: "Slack is unreachable" });
+    expect(Date.parse(s!.nextTryAt) - now.getTime()).toBe(backoffMs(MAX_TRIES + 3));
+  });
+
   test("a queue.enqueue intent run twice puts one message on the queue (deduplicated by input id)", async () => {
     const queued = new Map<string, unknown>();
     const d = { ...deps(), queue: { send: async (msgs: Array<{ inputId: string }>) => msgs.forEach((m) => queued.set(m.inputId, m)) } } as unknown as Deps;

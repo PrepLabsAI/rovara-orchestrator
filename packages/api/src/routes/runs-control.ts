@@ -37,4 +37,5 @@ export const routes: Route[] = [
   { method: "POST", pattern: "/v1/runs/:runId/pause", handler: control("pause", "pause") },
   { method: "POST", pattern: "/v1/runs/:runId/resume", handler: control("resume", "resume") },
   { method: "POST", pattern: "/v1/runs/:runId/cancel", handler: control("cancel", "cancel") },
+  { method: "POST", pattern: "/v1/runs/:runId/take-over", handler: control("take_over", "take_over") },
 ];

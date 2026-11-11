@@ -172,6 +172,10 @@ export const happyPath: AttemptHandler = (ctx, input: AttemptInput) => {
       const d = new Draft(ctx);
       d.attempt.costUsd += input.costUsd;
       d.counters = { costUsd: input.costUsd };
+      // The run's total is added atomically elsewhere; the run checks its stored total (FR-052).
+      if (ctx.run.costUsd + input.costUsd >= ctx.run.costLimitUsd) {
+        d.intents.push(enqueue({ group: `run:${ctx.run.runId}`, input: { kind: "cost_limit" } }, `cost-limit:${ctx.run.runId}:${input.eventId}`));
+      }
       return d.done();
     }
     default:

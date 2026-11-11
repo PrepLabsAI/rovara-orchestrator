@@ -15,6 +15,17 @@ export class WorkspaceLimit extends Error {
   }
 }
 
+/**
+ * Rovara accepted the request but will not act on it: the actor has not linked their Rovara sign-in
+ * to this channel (Rovara spec 062, FR-030). Rovara has used the event id, so a resend needs a new one.
+ */
+export class ActorNotLinked extends Error {
+  constructor(readonly userId: string) {
+    super(`Rovara will not act for ${userId}: their sign-in is not linked to this channel`);
+    this.name = "ActorNotLinked";
+  }
+}
+
 export class RovaraRequestFailed extends Error {
   constructor(readonly status: number, readonly code: string | null, message: string) {
     super(`Rovara answered ${status}${code ? ` ${code}` : ""}: ${message}`);
@@ -75,7 +86,13 @@ export class ChannelClient {
       headers: { "content-type": "application/json", ...sign(this.opts.secret, id, this.now(), body) },
       body,
     });
-    if (res.ok) return;
+    if (res.ok) {
+      if (res.status === 202 && (res.headers.get("content-type") ?? "").includes("json")) {
+        const j = (await res.json().catch(() => null)) as { status?: string } | null;
+        if (j?.status === "link_required") throw new ActorNotLinked((payload as { actor?: { userId?: string } }).actor?.userId ?? "");
+      }
+      return;
+    }
     let code: string | null = null;
     let message = res.statusText;
     try {

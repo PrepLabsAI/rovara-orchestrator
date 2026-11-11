@@ -225,6 +225,7 @@ export class Harness {
     };
     await this.table.transact([
       { kind: "put", item: encodeRun(run) },
+      { kind: "put", item: { ...keys.runListItem(now, runId), entityType: "RUNLIST", runId } },
       { kind: "put", item: { ...keys.dagActiveRun(dagId), runId }, ifNotExists: true },
       ...nodes.map((n) => ({ kind: "put" as const, item: encodeNode(n) })),
     ]);
@@ -388,10 +389,10 @@ export class Harness {
     this.crashes.push(match);
   }
 
-  /** Pause, resume or cancel a run through the operator API's own logic (FR-050). */
-  async controlRun(runId: string, kind: "pause" | "resume" | "cancel", reason = "test", idempotencyKey?: string): Promise<string> {
+  /** Pause, resume, cancel or take over a run through the operator API's own logic (FR-050, FR-057). */
+  async controlRun(runId: string, kind: "pause" | "resume" | "cancel" | "take_over", reason = "test", idempotencyKey?: string, by = "dev_op"): Promise<string> {
     const { controlRun } = await import("@rovara-orch/api");
-    const r = await controlRun({ deps: this.deps, operator: { id: "dev_op" }, idempotencyKey }, runId, kind, kind, reason);
+    const r = await controlRun({ deps: this.deps, operator: { id: by }, idempotencyKey }, runId, kind, kind, reason);
     return (r.body as { decisionId: string }).decisionId;
   }
 
