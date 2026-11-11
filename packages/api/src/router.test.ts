@@ -52,15 +52,15 @@ describe("operator API frame", () => {
 
   test("unknown routes are 404; stub routes answer 501 once authenticated", async () => {
     expect((await handle(deps, req("GET", "/v1/nope", aliceToken))).status).toBe(404);
-    const r = await handle(deps, req("GET", "/v1/dags", aliceToken));
+    const r = await handle(deps, req("GET", "/v1/stop-switch", aliceToken));
     expect(r.status).toBe(501);
     expect(r.body).toMatchObject({ error: { code: "NOT_IMPLEMENTED" } });
   });
 
   test("refuses missing tokens and non-operators, and records each refusal", async () => {
-    const anon = await handle(deps, req("GET", "/v1/dags"));
+    const anon = await handle(deps, req("GET", "/v1/stop-switch"));
     expect(anon).toMatchObject({ status: 401, body: { error: { code: "AUTH_REQUIRED" } } });
-    const eve = await handle(deps, req("GET", "/v1/dags", eveToken));
+    const eve = await handle(deps, req("GET", "/v1/stop-switch", eveToken));
     expect(eve).toMatchObject({ status: 403, body: { error: { code: "NOT_OPERATOR" } } });
     const refusals = await deps.table.query<{ action: string; actor: string }>("DECISIONS#GLOBAL", "DEC#");
     expect(refusals.map((r) => `${r.action}:${r.actor}`)).toEqual(expect.arrayContaining(["refused:anonymous", "refused:dev_eve"]));

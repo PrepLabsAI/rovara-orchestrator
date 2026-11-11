@@ -1,0 +1,211 @@
+{
+  "version": 1,
+  "unit": "story",
+  "hash": "sha256:b72298ffba535ec4938974a8d5a85ef1b00a3eea90075f71b784729607761084",
+  "feature": "User Authentication",
+  "source": "examples/specs/001-user-auth/tasks.md",
+  "spec": {
+    "id": "001-user-auth",
+    "dir": "examples/specs/001-user-auth",
+    "tasks": "examples/specs/001-user-auth/tasks.md",
+    "docs": {
+      "spec": "examples/specs/001-user-auth/spec.md",
+      "plan": "examples/specs/001-user-auth/plan.md",
+      "data-model": "examples/specs/001-user-auth/data-model.md"
+    },
+    "repo": "git@github.com:ps06756/speckit-dag.git",
+    "branch": "main",
+    "commit": "ac4211876ab1689bf7702945379800cc58049517",
+    "dirty": false,
+    "pushed": true
+  },
+  "groups": [
+    {
+      "id": "setup",
+      "name": "Phase 1: Setup (Shared Infrastructure)",
+      "kind": "setup",
+      "order": 0,
+      "story": null,
+      "priority": null,
+      "mvp": false,
+      "line": 15,
+      "end_line": 19,
+      "text": "## Phase 1: Setup (Shared Infrastructure)\n\n- [x] T001 Create project structure per implementation plan\n- [ ] T002 [P] Configure ruff and black in pyproject.toml\n- [ ] T003 [P] Add CI workflow in .github/workflows/ci.yml"
+    },
+    {
+      "id": "foundational",
+      "name": "Phase 2: Foundational (Blocking Prerequisites)",
+      "kind": "foundational",
+      "order": 1,
+      "story": null,
+      "priority": null,
+      "mvp": false,
+      "line": 23,
+      "end_line": 32,
+      "text": "## Phase 2: Foundational (Blocking Prerequisites)\n\n**⚠️ CRITICAL**: No user story work can begin until this phase is complete\n\n- [ ] T004 Set up database schema and migrations in src/db/migrations/\n- [ ] T005 [P] Implement password hashing helpers in src/lib/crypto.py\n- [ ] T006 [P] Configure structured logging in src/lib/logging.py\n- [ ] T007 Create base API router and error handling in src/api/app.py\n\n**Checkpoint**: Foundation ready - user story work can now begin in parallel"
+    },
+    {
+      "id": "US1",
+      "name": "Phase 3: User Story 1 - Sign up with email (Priority: P1) 🎯 MVP",
+      "kind": "story",
+      "order": 2,
+      "story": "US1",
+      "priority": "P1",
+      "mvp": true,
+      "line": 36,
+      "end_line": 53,
+      "text": "## Phase 3: User Story 1 - Sign up with email (Priority: P1) 🎯 MVP\n\n**Goal**: A visitor can create an account with an email and password.\n\n### Tests for User Story 1\n\n- [ ] T008 [P] [US1] Contract test for POST /signup in tests/contract/test_signup.py\n- [ ] T009 [P] [US1] Integration test for the sign-up flow in tests/integration/test_signup.py\n\n### Implementation for User Story 1\n\n- [ ] T010 [P] [US1] Create User model in src/models/user.py\n- [ ] T011 [P] [US1] Create VerificationToken model in src/models/token.py\n- [ ] T012 [US1] Implement SignupService in src/services/signup.py\n  - Hash the password with the helpers in src/lib/crypto.py\n  - Create the user and its verification token in one transaction\n  - Return a 409 when the email is already registered\n- [ ] T013 [US1] Implement POST /signup endpoint in src/api/signup.py"
+    },
+    {
+      "id": "US2",
+      "name": "Phase 4: User Story 2 - Log in (Priority: P2)",
+      "kind": "story",
+      "order": 3,
+      "story": "US2",
+      "priority": "P2",
+      "mvp": false,
+      "line": 57,
+      "end_line": 66,
+      "text": "## Phase 4: User Story 2 - Log in (Priority: P2)\n\n### Tests for User Story 2\n\n- [ ] T014 [P] [US2] Contract test for POST /login in tests/contract/test_login.py\n\n### Implementation for User Story 2\n\n- [ ] T015 [P] [US2] Implement session store in src/services/sessions.py\n- [ ] T016 [US2] Implement POST /login endpoint in src/api/login.py"
+    },
+    {
+      "id": "US3",
+      "name": "Phase 5: User Story 3 - Reset password (Priority: P3)",
+      "kind": "story",
+      "order": 4,
+      "story": "US3",
+      "priority": "P3",
+      "mvp": false,
+      "line": 70,
+      "end_line": 75,
+      "text": "## Phase 5: User Story 3 - Reset password (Priority: P3)\n\n### Implementation for User Story 3\n\n- [ ] T017 [P] [US3] Implement reset-token service in src/services/reset.py (depends on T011)\n- [ ] T018 [US3] Implement POST /password-reset endpoint in src/api/reset.py"
+    },
+    {
+      "id": "polish",
+      "name": "Phase 6: Polish & Cross-Cutting Concerns",
+      "kind": "polish",
+      "order": 5,
+      "story": null,
+      "priority": null,
+      "mvp": false,
+      "line": 79,
+      "end_line": 83,
+      "text": "## Phase 6: Polish & Cross-Cutting Concerns\n\n- [ ] T019 [P] Document auth endpoints in docs/api.md\n- [ ] T020 [P] Add rate limiting to auth endpoints in src/api/middleware.py\n- [ ] T021 Run quickstart.md validation"
+    }
+  ],
+  "edges": [
+    {
+      "from": "setup",
+      "to": "foundational",
+      "reasons": [
+        "phase"
+      ],
+      "via": [
+        {
+          "from": "T002",
+          "to": "T004"
+        },
+        {
+          "from": "T003",
+          "to": "T004"
+        }
+      ]
+    },
+    {
+      "from": "foundational",
+      "to": "US1",
+      "reasons": [
+        "phase"
+      ],
+      "via": [
+        {
+          "from": "T007",
+          "to": "T008"
+        },
+        {
+          "from": "T007",
+          "to": "T009"
+        }
+      ]
+    },
+    {
+      "from": "foundational",
+      "to": "US2",
+      "reasons": [
+        "phase"
+      ],
+      "via": [
+        {
+          "from": "T007",
+          "to": "T014"
+        }
+      ]
+    },
+    {
+      "from": "US1",
+      "to": "US3",
+      "reasons": [
+        "explicit"
+      ],
+      "via": [
+        {
+          "from": "T011",
+          "to": "T017"
+        }
+      ]
+    },
+    {
+      "from": "US2",
+      "to": "polish",
+      "reasons": [
+        "phase"
+      ],
+      "via": [
+        {
+          "from": "T016",
+          "to": "T019"
+        },
+        {
+          "from": "T016",
+          "to": "T020"
+        }
+      ]
+    },
+    {
+      "from": "US3",
+      "to": "polish",
+      "reasons": [
+        "phase"
+      ],
+      "via": [
+        {
+          "from": "T018",
+          "to": "T019"
+        },
+        {
+          "from": "T018",
+          "to": "T020"
+        }
+      ]
+    }
+  ],
+  "waves": [
+    [
+      "setup"
+    ],
+    [
+      "foundational"
+    ],
+    [
+      "US1",
+      "US2"
+    ],
+    [
+      "US3"
+    ],
+    [
+      "polish"
+    ]
+  ],
+  "warnings": []
+}
