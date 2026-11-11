@@ -87,7 +87,7 @@ describe("applyTransition", () => {
   });
 
   test("the same input twice is a DuplicateInput and changes nothing the second time", async () => {
-    const { run, node, attempt } = await seed("run_01APPLY00000000000000000C");
+    const { run, attempt } = await seed("run_01APPLY00000000000000000C");
     const base = {
       owner: ownerPk.attempt(attempt.attemptId),
       inputId: "in-3",
