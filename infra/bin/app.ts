@@ -4,6 +4,7 @@ import { ServiceStack } from "../lib/service.js";
 import { stageConfig } from "../lib/stage.js";
 import { LoadStageStack } from "../lib/load-stage.js";
 import { WebStack } from "../lib/web.js";
+import { jsonContext } from "../lib/context.js";
 
 const app = new App();
 const stage = stageConfig(String(app.node.tryGetContext("stage") ?? "test"));
@@ -14,11 +15,11 @@ const load = stage.name === "load" ? new LoadStageStack(app, `RovaraOrch-${stage
 new ServiceStack(app, `RovaraOrch-${stage.name}-Service`, {
   stage,
   data,
-  rovara: app.node.tryGetContext("rovara"),
+  rovara: jsonContext(app, "rovara"),
   statusPageUrl: app.node.tryGetContext("statusPageUrl") ?? web.origin,
   pageOrigin: web.origin,
-  github: app.node.tryGetContext("github"),
-  devOperators: app.node.tryGetContext("devOperators"),
+  github: jsonContext(app, "github"),
+  devOperators: jsonContext(app, "devOperators"),
   ...(load ? { fakeServicesUrl: load.url, fakeServicesSecret: load.secret } : {}),
 });
 app.synth();
