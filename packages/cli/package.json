@@ -12,5 +12,8 @@
   "dependencies": {
     "@napi-rs/keyring": "^2.1.2",
     "commander": "^15.1.0"
+  },
+  "bin": {
+    "rovara-orch": "bin/rovara-orch.js"
   }
 }
