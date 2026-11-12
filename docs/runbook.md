@@ -38,18 +38,29 @@ npm run deploy -- -c stage=test …          # same context as above
 
 ## 2. Register the Rovara adapter (D7)
 
-Until Rovara's adapter commands land (PrepLabsAI/Rovara#428), register the orchestrator through
-Rovara's admin interface, which must be turned on in the Rovara deployment:
-
-1. Add a channel adapter named `orchestrator`, with the callback URL `<ApiUrl>/rovara/events`.
-   Register it **without step-up**: an adapter registered with step-up gets plan approvals with no
-   approve actions, and the orchestrator escalates every such node.
-2. Bind it to the monorepo's Rovara project and space.
-3. Store the signing secret Rovara returns:
+A Rovara administrator of the monorepo's project does this with Rovara's `agentx` CLI
+(Rovara's `docs/channel-adapters.md`). Channel adapters must be turned on in that Rovara
+deployment first (control-plane parameter `ChannelAdapters=enabled`).
 
 ```bash
-aws secretsmanager put-secret-value --secret-id rovara-orch/test/rovara-adapter-secret --secret-string '<whsec_…>'
+agentx --env <rovara env> adapter add orchestrator \
+  --callback-url <ApiUrl>/rovara/events \
+  --projects <monorepo's Rovara project> \
+  --step-up admin \
+  --secret-file ./orchestrator-adapter-secret
+agentx --env <rovara env> adapter bind orchestrator --tenant <tenant> --space <space> --project <project>
+aws secretsmanager put-secret-value --secret-id rovara-orch/test/rovara-adapter-secret --secret-string file://orchestrator-adapter-secret
+rm ./orchestrator-adapter-secret
 ```
+
+- `--step-up admin` is required. Rovara's default, `plan_approval,admin`, keeps plan approvals for
+  people on the task page; the orchestrator then gets approval requests with no approve action and
+  escalates every node. With `admin` only, administrator confirmations still go to people, and the
+  orchestrator escalates those.
+- `--tenant` and `--space` are the orchestrator's own ids for its one conversation space; use the
+  same values as the deploy context's `rovara.tenant` and `rovara.space`.
+- Rovara prints or writes the secret once. If it is lost, run `adapter add` again with `--rotate`
+  and store the new one.
 
 Each operator who will start runs must link their Rovara sign-in to the `orchestrator` channel
 (Rovara sends a `link_required` link the first time; `rovara-orch run start` prints it).
