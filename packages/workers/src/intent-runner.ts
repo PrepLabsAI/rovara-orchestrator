@@ -76,6 +76,7 @@ export async function runIntent(
       await deps.table.transact(ops).catch((err: unknown) => {
         if (!(err instanceof ConditionFailed)) throw err;
       });
+      deps.log?.({ event: "intent.failed", effect: intent.effect, key: intent.key, tries, error }); // alarmed (T122)
       return "failed";
     }
     const nextTryAt = new Date(now.getTime() + backoffMs(tries)).toISOString();

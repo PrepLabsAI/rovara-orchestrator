@@ -64,4 +64,18 @@ describe("ServiceStack", () => {
       }
     }
   });
+
+  test("the development operators reach only the API, and never in prod", () => {
+    const app = new App({ context: { "aws:cdk:bundling-stacks": [] } });
+    const stage = stageConfig("test");
+    const devOperators = [{ id: "dev_alice", name: "Alice", admin: true }];
+    const t = Template.fromStack(new ServiceStack(app, "S", { stage, data: new DataStack(app, "D", { stage }), devOperators }));
+    const fns = Object.values(t.findResources("AWS::Lambda::Function")) as Array<{ Properties: { Environment: { Variables: Record<string, string> } } }>;
+    const withOps = fns.filter((f) => f.Properties.Environment.Variables.DEV_OPERATORS);
+    expect(withOps.map((f) => f.Properties.Environment.Variables.ROVARA_ORCH_ROLE)).toEqual(["api"]);
+    expect(JSON.parse(withOps[0]!.Properties.Environment.Variables.DEV_OPERATORS!)).toEqual(devOperators);
+    const prodApp = new App({ context: { "aws:cdk:bundling-stacks": [] } });
+    const prod = stageConfig("prod");
+    expect(() => new ServiceStack(prodApp, "S", { stage: prod, data: new DataStack(prodApp, "D", { stage: prod }), devOperators })).toThrow(/development operators/);
+  });
 });

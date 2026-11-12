@@ -42,7 +42,7 @@ function parseStart(body: unknown): { dagId: string; concurrencyLimit: number; c
  * active-run item in one transaction, with the run_start and scheduler-pass inputs as intents.
  * A DAG with an active run is refused with 409.
  */
-export async function startRun(deps: ApiDeps, operatorId: string, body: unknown): Promise<{ runId: string }> {
+export async function startRun(deps: ApiDeps, operatorId: string, body: unknown): Promise<{ runId: string; pageUrl: string }> {
   const p = parseStart(body);
   const dag = await deps.repos.getDag(p.dagId);
   if (!dag) throw new ApiError("NOT_FOUND", `no DAG ${p.dagId}`);
@@ -106,7 +106,7 @@ export async function startRun(deps: ApiDeps, operatorId: string, body: unknown)
     if (e instanceof ConditionFailed) throw new ApiError("CONFLICT", `${dag.dagId} already has an active run`);
     throw e;
   }
-  return { runId };
+  return { runId, pageUrl: pageLink(deps.config.statusPageUrl, `/runs/${encodeURIComponent(runId)}`) };
 }
 
 /** One run with its nodes, as the status page and `run status` show it (FR-053). */
@@ -172,3 +172,9 @@ export const routes: Route[] = [
     handler: async ({ deps, params }) => ({ status: 200, body: await runView(deps, params.runId!) }),
   },
 ];
+
+/** A status page link: the page routes on the URL's hash (packages/web). */
+export function pageLink(statusPageUrl: string, route: string): string {
+  return `${statusPageUrl.replace(/\/?#?\/?$/, "")}/#${route}`;
+}
+

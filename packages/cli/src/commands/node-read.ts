@@ -2,6 +2,7 @@ import type { Command } from "commander";
 import { expectOk, print, type CliContext } from "../context.js";
 
 interface NodeView {
+  pageUrl?: string;
   nodeId: string;
   title: string;
   state: string;
@@ -27,7 +28,7 @@ export function register(program: Command, ctx: () => CliContext): void {
     .action(async (runId: string, nodeId: string) => {
       const c = ctx();
       const v = expectOk(await c.api.request("GET", `/v1/runs/${encodeURIComponent(runId)}/nodes/${encodeURIComponent(nodeId)}`)) as NodeView;
-      const page = `${c.url.replace(/\/$/, "")}/runs/${encodeURIComponent(runId)}/nodes/${encodeURIComponent(nodeId)}`;
+      const page = v.pageUrl ?? "the status page";
       print(c, v, () => [
         `${v.nodeId}  ${v.title}  ${v.state}${v.waitingFor ? `  waiting: ${v.waitingFor.reason}${v.waitingFor.detail ? ` (${v.waitingFor.detail})` : ""}` : ""}`,
         ...v.attempts.flatMap((a) => [

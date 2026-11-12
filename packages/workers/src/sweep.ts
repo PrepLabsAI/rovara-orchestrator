@@ -37,6 +37,7 @@ export async function runSweep(deps: Deps): Promise<{ timers: number; redriven: 
   const runs = await deps.repos.listActiveRuns();
   const repos = [...new Set(runs.map((r) => r.repo))];
   const minute = Math.floor(now.getTime() / 60_000);
+  if (!repos.length) deps.log?.({ event: "sweep.no_active_runs" }); // nothing to schedule: not a stalled scheduler
   if (repos.length) {
     await deps.queue.send(repos.map((repo) => ({ group: `repo:${repo}`, input: { kind: "schedule" }, inputId: `sweep-sched:${repo}:${minute}` })));
   }

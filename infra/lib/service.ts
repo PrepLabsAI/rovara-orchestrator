@@ -1,5 +1,5 @@
 import { fileURLToPath } from "node:url";
-import { Duration, Stack, type StackProps } from "aws-cdk-lib";
+import { CfnOutput, Duration, RemovalPolicy, Stack, type StackProps } from "aws-cdk-lib";
 import { CorsHttpMethod, HttpApi, HttpMethod } from "aws-cdk-lib/aws-apigatewayv2";
 import { HttpLambdaIntegration } from "aws-cdk-lib/aws-apigatewayv2-integrations";
 import { Rule, Schedule } from "aws-cdk-lib/aws-events";
@@ -8,8 +8,10 @@ import { PolicyStatement } from "aws-cdk-lib/aws-iam";
 import { Architecture, Runtime, StartingPosition, FilterCriteria, FilterRule } from "aws-cdk-lib/aws-lambda";
 import { DynamoEventSource, SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import { NodejsFunction } from "aws-cdk-lib/aws-lambda-nodejs";
+import { LogGroup, RetentionDays } from "aws-cdk-lib/aws-logs";
 import { DeduplicationScope, FifoThroughputLimit, Queue } from "aws-cdk-lib/aws-sqs";
 import type { Construct } from "constructs";
+import { addAlarms } from "./alarms.js";
 import type { DataStack } from "./data.js";
 import type { StageConfig } from "./stage.js";
 
@@ -24,6 +26,8 @@ export interface ServiceStackProps extends StackProps {
   /** Load stage only: the fake services' URL and shared secret (LoadStageStack). */
   fakeServicesUrl?: string;
   fakeServicesSecret?: string;
+  /** Development-only operators (until Rovara#442), for the API's sign-in; refused in prod. */
+  devOperators?: Array<{ id: string; name: string; admin: boolean }>;
   /** The orchestrator's GitHub App (app id and installation id; the private key is in the secret store). */
   github?: { appId: string; installationId: string };
   /** Bedrock model the answerer uses (research R8). */
@@ -40,6 +44,7 @@ export class ServiceStack extends Stack {
 
   constructor(scope: Construct, id: string, props: ServiceStackProps) {
     if (props.fakeServicesUrl && props.stage.name !== "load") throw new Error(`fake services can be used only in the load stage, not in ${props.stage.name}`);
+    if (props.devOperators?.length && props.stage.prod) throw new Error("development operators are not allowed in prod (Rovara#442 replaces them)");
     super(scope, id, props);
     const { data, stage } = props;
     const rovara = props.rovara ?? { url: "https://rovara.invalid", channel: "orchestrator", tenant: stage.name, space: "mono" };
@@ -81,6 +86,7 @@ export class ServiceStack extends Stack {
         memorySize: 512,
         timeout: Duration.seconds(timeout),
         environment: { ...environment, ROVARA_ORCH_ROLE: role },
+        logGroup: new LogGroup(this, `Logs-${role}`, { retention: RetentionDays.ONE_MONTH, removalPolicy: stage.prod ? RemovalPolicy.RETAIN : RemovalPolicy.DESTROY }),
         bundling: { format: undefined, sourceMap: true, target: "node22" },
       });
 
@@ -103,6 +109,7 @@ export class ServiceStack extends Stack {
     data.secrets.slackToken.grantRead(sweep);
     api.addToRolePolicy(new PolicyStatement({ actions: ["s3:GetObject", "s3:PutObject"], resources: [data.dagBucket.arnForObjects("*")] }));
     api.addEnvironment("DAG_BUCKET", data.dagBucket.bucketName);
+    if (props.devOperators?.length) api.addEnvironment("DEV_OPERATORS", JSON.stringify(props.devOperators));
     this.queue.grantSendMessages(intentRunner);
     this.queue.grantSendMessages(sweep);
     for (const f of [intentRunner, sweep]) {
@@ -135,5 +142,10 @@ export class ServiceStack extends Stack {
     this.api.addRoutes({ path: "/rovara/events", methods: [HttpMethod.POST], integration: new HttpLambdaIntegration("RovaraEvents", rovaraIngress) });
     this.api.addRoutes({ path: "/github/events", methods: [HttpMethod.POST], integration: new HttpLambdaIntegration("GithubEvents", githubIngress) });
     this.api.addRoutes({ path: "/v1/{proxy+}", methods: [HttpMethod.ANY], integration: new HttpLambdaIntegration("OperatorApi", api) });
+
+    addAlarms(this, { stage, api: this.api, dlq, consumer, intentRunner, sweep });
+    new CfnOutput(this, "ApiUrl", { value: this.api.apiEndpoint, description: "rovara-orch --url; the Rovara adapter's callback is <ApiUrl>/rovara/events" });
+    new CfnOutput(this, "TableName", { value: data.table.tableName });
+    new CfnOutput(this, "WorkConsumerLogGroup", { value: consumer.logGroup.logGroupName });
   }
 }

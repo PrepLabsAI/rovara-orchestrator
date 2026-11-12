@@ -18,6 +18,7 @@ new ServiceStack(app, `RovaraOrch-${stage.name}-Service`, {
   statusPageUrl: app.node.tryGetContext("statusPageUrl") ?? web.origin,
   pageOrigin: web.origin,
   github: app.node.tryGetContext("github"),
+  devOperators: app.node.tryGetContext("devOperators"),
   ...(load ? { fakeServicesUrl: load.url, fakeServicesSecret: load.secret } : {}),
 });
 app.synth();
