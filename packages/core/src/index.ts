@@ -8,3 +8,5 @@ export { runMachine, RUN_HANDLERS } from "./machine/run.js";
 export { repositoryMachine } from "./machine/repository.js";
 export * from "./scheduler/types.js";
 export { pick, compareCandidates, GATES } from "./scheduler/pick.js";
+export * from "./backoff.js";
+export { freeWorkspaces } from "./scheduler/pick.js";

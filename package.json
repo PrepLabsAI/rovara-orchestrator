@@ -23,6 +23,7 @@
     "db:down": "docker stop rovara-orch-dynamodb"
   },
   "devDependencies": {
+    "@aws-sdk/client-cloudwatch-logs": "^3.1167.0",
     "@types/aws-lambda": "^8.10.164",
     "@types/node": "^26.6.6",
     "eslint": "^10.14.0",

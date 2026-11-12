@@ -152,6 +152,10 @@ export type RepoInput =
   | { kind: "main_push"; headSha: string }
   /** Read main's required checks afresh (the sweep sends this while a repository is paused). */
   | { kind: "recheck_main" }
+  /** Rovara refused a start because its workspace limit is reached (FR-062). */
+  | { kind: "workspace_limit_hit" }
+  /** One finished back-off window's start requests and throttling refusals (FR-063). */
+  | { kind: "rate_window"; window: number; requests: number; throttled: number; concurrencyLimit: number }
   | { kind: "schedule" }
   /** Read a PR's state from GitHub and turn it into inputs for its attempt (constitution III). */
   | { kind: "reconcile_pr"; attemptId: string };
