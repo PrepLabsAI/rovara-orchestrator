@@ -6,3 +6,4 @@ export * from "./apply-transition.js";
 export * from "./leases.js";
 export * from "./file-locks.js";
 export * from "./trace.js";
+export * from "./throttle.js";

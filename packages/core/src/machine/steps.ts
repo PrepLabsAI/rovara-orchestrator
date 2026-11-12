@@ -95,7 +95,8 @@ export function quietDue(ctx: AttemptContext): string {
 
 /** Whether the node may start another attempt; an operator retry gives it a fresh set (FR-030, FR-033). */
 export function attemptsLeft(d: Draft): boolean {
-  return d.node.attempts < d.ctx.run.retry.attempts + (d.node.attemptsBeforeRetry ?? 0);
+  const used = d.node.attempts - (d.node.refusedStarts ?? 0);
+  return used < d.ctx.run.retry.attempts + (d.node.attemptsBeforeRetry ?? 0);
 }
 
 /**

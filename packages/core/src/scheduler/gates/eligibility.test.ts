@@ -34,6 +34,7 @@ const dagArb = fc
       nodeStates: states,
       activeByRun: new Map([[run.runId, active]]),
       heldFiles: new Map(),
+      startedThisMinute: 0,
     };
     return { snapshot, concurrency, free, active, states, run };
   });
@@ -85,6 +86,7 @@ describe("scheduler eligibility (properties over 10,000 random DAGs)", () => {
       nodeStates: new Map(),
       activeByRun: new Map(),
       heldFiles: new Map(),
+      startedThisMinute: 0,
     };
     expect(pick(snapshot).starts.map((c) => c.node.nodeId)).toEqual(["mvp-p2", "p1", "early-p2", "late-p2"]);
   });
@@ -101,6 +103,7 @@ describe("scheduler eligibility (properties over 10,000 random DAGs)", () => {
       nodeStates: new Map([[`${run.runId}/setup`, dep.node.state], [`${run.runId}/US1`, "waiting"]]),
       activeByRun: new Map(),
       heldFiles: new Map(),
+      startedThisMinute: 0,
     };
     expect(pick(snapshot).starts.map((c) => c.node.nodeId)).toEqual(["US1"]);
   });

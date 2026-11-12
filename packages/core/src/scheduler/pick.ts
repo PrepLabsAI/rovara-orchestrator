@@ -1,3 +1,5 @@
+import { WORKSPACE_LIMIT_HOLD_MS } from "../backoff.js";
+import type { Repository, WaitingFor } from "../model.js";
 import type { Candidate, Gate, Hold, PickResult, Snapshot } from "./types.js";
 import { controlsGate } from "./gates/controls.js";
 import { eligibilityGate } from "./gates/eligibility.js";
@@ -49,10 +51,15 @@ export function pick(snapshot: Snapshot): PickResult {
 
   const starts: Candidate[] = [];
   const usedByRun = new Map(snapshot.activeByRun);
-  let free = snapshot.repo.rovaraFreeWorkspaces;
+  let free = freeWorkspaces(snapshot.repo, snapshot.now);
+  const noWorkspace = noWorkspaceReason(snapshot.repo);
   for (const c of current) {
     const used = usedByRun.get(c.run.runId) ?? 0;
-    if (used >= c.run.concurrencyLimit || (free !== null && free <= 0)) {
+    if (free !== null && free <= 0) {
+      holds.push({ candidate: c, waitingFor: noWorkspace });
+      continue;
+    }
+    if (used >= c.run.concurrencyLimit) {
       holds.push({ candidate: c, waitingFor: { reason: "capacity" } });
       continue;
     }
@@ -62,3 +69,20 @@ export function pick(snapshot: Snapshot): PickResult {
   }
   return { starts, holds };
 }
+
+/**
+ * Rovara's free workspaces, as far as the orchestrator knows: none for a minute after Rovara refused
+ * a start for its workspace limit (FR-062), then what was last known (null when unknown, until
+ * Rovara offers a state read, Rovara#437/#440).
+ */
+export function freeWorkspaces(repo: Repository, now: string): number | null {
+  if (repo.workspaceLimitAt && Date.parse(now) - Date.parse(repo.workspaceLimitAt) < WORKSPACE_LIMIT_HOLD_MS) return 0;
+  if (repo.workspaceLimitAt && repo.rovaraFreeWorkspaces === 0) return null;
+  return repo.rovaraFreeWorkspaces;
+}
+
+function noWorkspaceReason(repo: Repository): WaitingFor {
+  if (repo.rovaraProjectLimit !== null) return { reason: "capacity", detail: `Rovara's project limit is ${repo.rovaraProjectLimit}; an administrator can raise it` };
+  return { reason: "capacity", detail: "Rovara's workspace limit is reached" };
+}
+

@@ -1,4 +1,5 @@
-import type { Attempt, Intent, QueueMessage } from "@rovara-orch/core";
+import { rateWindowOf, type Attempt, type Intent, type QueueMessage } from "@rovara-orch/core";
+import { readMinutes, windowMinutes } from "@rovara-orch/store";
 import { runIntent } from "./intent-runner.js";
 import { expireEndedTraces } from "./sweep-trace-expiry.js";
 import type { Deps } from "./ports.js";
@@ -56,6 +57,18 @@ export async function runSweep(deps: Deps): Promise<{ timers: number; redriven: 
   if (paused.length) {
     await deps.queue.send(paused.map((r) => ({ group: `repo:${r.repo}`, input: { kind: "recheck_main" }, inputId: `recheck-main:${r.repo}:${minute}` })));
   }
+  // Each finished 5-minute window becomes the repository's next start rate (FR-063).
+  const lastWindow = rateWindowOf(now) - 1;
+  const windows: QueueMessage[] = [];
+  for (const repo of repos) {
+    if (((await deps.repos.getRepo(repo)).rateWindow ?? -1) >= lastWindow) continue;
+    const [from, to] = windowMinutes(lastWindow);
+    const counts = await readMinutes(deps.table, repo, from, to);
+    const concurrencyLimit = Math.max(...runs.filter((r) => r.repo === repo).map((r) => r.concurrencyLimit));
+    windows.push({ group: `repo:${repo}`, input: { kind: "rate_window", window: lastWindow, requests: counts.requests, throttled: counts.throttled, concurrencyLimit }, inputId: `rate:${repo}:${lastWindow}` });
+  }
+  if (windows.length) await deps.queue.send(windows);
+
   await expireEndedTraces(deps);
   return { timers: timers.length, redriven: pending.length, passes: repos.length };
 }

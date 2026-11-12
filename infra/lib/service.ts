@@ -21,6 +21,11 @@ export interface ServiceStackProps extends StackProps {
   statusPageUrl?: string;
   /** The status page's origin (WebStack.origin): the only origin the API allows, for its GET routes. */
   pageOrigin?: string;
+  /** Load stage only: the fake services' URL and shared secret (LoadStageStack). */
+  fakeServicesUrl?: string;
+  fakeServicesSecret?: string;
+  /** The orchestrator's GitHub App (app id and installation id; the private key is in the secret store). */
+  github?: { appId: string; installationId: string };
   /** Bedrock model the answerer uses (research R8). */
   modelId?: string;
 }
@@ -34,6 +39,7 @@ export class ServiceStack extends Stack {
   readonly queue: Queue;
 
   constructor(scope: Construct, id: string, props: ServiceStackProps) {
+    if (props.fakeServicesUrl && props.stage.name !== "load") throw new Error(`fake services can be used only in the load stage, not in ${props.stage.name}`);
     super(scope, id, props);
     const { data, stage } = props;
     const rovara = props.rovara ?? { url: "https://rovara.invalid", channel: "orchestrator", tenant: stage.name, space: "mono" };
@@ -56,6 +62,9 @@ export class ServiceStack extends Stack {
       ROVARA_TENANT: rovara.tenant,
       ROVARA_SPACE: rovara.space,
       STATUS_PAGE_URL: props.statusPageUrl ?? "https://status.invalid",
+      GITHUB_APP_ID: props.github?.appId ?? "",
+      GITHUB_INSTALLATION_ID: props.github?.installationId ?? "",
+      ...(props.fakeServicesUrl ? { FAKE_SERVICES_URL: props.fakeServicesUrl, FAKE_SERVICES_SECRET: props.fakeServicesSecret ?? "" } : {}),
       MODEL_ID: props.modelId ?? "anthropic.claude-opus-5-5",
       ROVARA_SECRET_ARN: data.secrets.rovaraAdapterSecret.secretArn,
       GITHUB_APP_KEY_ARN: data.secrets.githubAppPrivateKey.secretArn,

@@ -33,6 +33,7 @@ const arb = fc
       nodeStates: new Map(candidates.map((c) => [`${c.run.runId}/${c.node.nodeId}`, c.node.state])),
       activeByRun: new Map(runs.map((r) => [r.runId, candidates.filter((c) => c.run.runId === r.runId && c.node.state === "running").length])),
       heldFiles: held,
+      startedThisMinute: 0,
     };
     return { snapshot, candidates };
   });
@@ -60,6 +61,7 @@ describe("file locks (properties over 10,000 random cases)", () => {
     const c = (nodeId: string, files: string[]): Candidate => ({ run, node: aNode({ runId: run.runId, nodeId, state: "eligible" }), dagNode: aDagNode({ nodeId, files }) });
     const snapshot = {
       heldFiles: new Map([["src/a.ts", { runId: run.runId, nodeId: "OTHER" }]]),
+      startedThisMinute: 0,
     } as unknown as Snapshot;
     const r = fileLocksGate(snapshot, [c("DIR", ["src/"]), c("A", ["src/a.ts"]), c("B", ["src/b.ts", "src/"]), c("B2", ["src/b.ts"])]);
     expect(r.pass.map((x) => x.node.nodeId)).toEqual(["DIR", "B"]);

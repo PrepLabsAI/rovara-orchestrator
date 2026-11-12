@@ -15,6 +15,7 @@ function snapshot(p: { stop?: boolean; state?: "running" | "paused"; cost?: numb
     nodeStates: new Map(),
     activeByRun: new Map(),
     heldFiles: new Map(),
+    startedThisMinute: 0,
   };
 }
 

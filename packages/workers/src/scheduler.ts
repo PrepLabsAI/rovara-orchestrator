@@ -6,6 +6,7 @@ import {
   enqueue,
   FINAL_NODE_STATES,
   moveNode,
+  minuteOf,
   pick,
   type Attempt,
   type Candidate,
@@ -19,8 +20,10 @@ import {
   ConditionFailed,
   counterOp,
   encodeAttempt,
+  countOp,
   heldFiles,
   intentOps,
+  readMinutes,
   keys,
   lockOps,
   nodeFields,
@@ -31,11 +34,13 @@ import type { Deps } from "./ports.js";
 
 /** Read everything one pass over a repository needs. */
 export async function loadSnapshot(deps: Deps, repoName: string): Promise<Snapshot> {
-  const [runs, settings, repo, held] = await Promise.all([
+  const minute = minuteOf(deps.clock.now());
+  const [runs, settings, repo, held, thisMinute] = await Promise.all([
     deps.repos.listActiveRuns(repoName),
     deps.repos.getSettings(),
     deps.repos.getRepo(repoName),
     heldFiles(deps.table, repoName),
+    readMinutes(deps.table, repoName, minute, minute),
   ]);
   const candidates: Candidate[] = [];
   const nodeStates = new Map<string, NodeState>();
@@ -52,7 +57,7 @@ export async function loadSnapshot(deps: Deps, repoName: string): Promise<Snapsh
     }
     activeByRun.set(run.runId, active);
   }
-  return { now: deps.clock.now().toISOString(), settings, repo, candidates, nodeStates, activeByRun, heldFiles: held };
+  return { now: deps.clock.now().toISOString(), settings, repo, candidates, nodeStates, activeByRun, heldFiles: held, startedThisMinute: thisMinute.started };
 }
 
 function newAttempt(deps: Deps, c: Candidate, baseCommit: string | null, now: string): Attempt {
@@ -98,6 +103,7 @@ function startOps(c: Candidate, attempt: Attempt, now: string): { ops: Op[]; int
     { kind: "update", key: keys.runNode(node.runId, node.nodeId), set: nodeFields(node), expectedVersion: c.node.version },
     ...lockOps(c.run.repo, c.run.runId, c.dagNode),
     ...iops,
+    countOp(c.run.repo, now, { started: 1 }),
   ];
   const counter = counterOp(c.run.runId, counters);
   if (counter) ops.push(counter);

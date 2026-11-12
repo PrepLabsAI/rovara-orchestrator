@@ -19,6 +19,8 @@ export interface Snapshot {
   activeByRun: Map<string, number>;
   /** Files held by running nodes in any run on the repository. */
   heldFiles: Map<string, { runId: string; nodeId: string }>;
+  /** Starts already made on the repository this minute (the throttle gate's budget, FR-063). */
+  startedThisMinute: number;
 }
 
 export interface Hold {

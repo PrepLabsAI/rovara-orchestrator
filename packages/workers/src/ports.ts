@@ -64,6 +64,11 @@ export interface GithubApi {
   checksForSha(repo: string, sha: string): Promise<{ status: "passed" | "failed" | "pending"; failing: string[] }>;
 }
 
+/** Rovara's admin change path for project workspace limits. Absent until PrepLabsAI/Rovara#430 lands. */
+export interface RovaraAdminApi {
+  requestWorkspaceLimit(input: { project: string; openWorkspaces: number; openWorkspacesPerPerson: number; by: string; key: string }): Promise<void>;
+}
+
 export interface SlackApi {
   post(input: { channel: string; text: string; key: string }): Promise<{ ts: string }>;
   reply(input: { channel: string; threadTs: string; text: string; key: string }): Promise<{ ts: string }>;
@@ -118,5 +123,7 @@ export interface Deps {
   answerer: AnswererApi;
   config: WorkerConfig;
   operators: OperatorDirectory;
+  /** Rovara's admin change path (Rovara#430); absent until it exists. */
+  rovaraAdmin?: RovaraAdminApi;
   log?: (entry: Record<string, unknown>) => void;
 }

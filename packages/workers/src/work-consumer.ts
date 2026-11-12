@@ -50,12 +50,17 @@ export type ConsumeResult = { outcome: "applied" | "noop" | "duplicate" | "missi
  * sends to the queue: follow-up inputs are written as enqueue intents in the same transaction.
  */
 export async function consume(deps: Deps, msg: QueueMessage, machines: Machines = DEFAULT_MACHINES): Promise<ConsumeResult> {
+  const machine = msg.group.slice(0, msg.group.indexOf(":"));
   for (let i = 0; i < MAX_TRIES; i++) {
     try {
-      if (msg.group.startsWith("att:")) return await consumeAttempt(deps, msg.group.slice(4), msg.input as AttemptInput, msg.inputId, machines);
-      if (msg.group.startsWith("run:")) return await consumeRun(deps, msg.group.slice(4), msg.input as RunInput, msg.inputId, machines);
-      if (msg.group.startsWith("repo:")) return await consumeRepo(deps, msg.group.slice(5), msg.input as RepoInput, msg.inputId, machines);
-      throw new Error(`unknown group ${msg.group}`);
+      let r: ConsumeResult;
+      if (msg.group.startsWith("att:")) r = await consumeAttempt(deps, msg.group.slice(4), msg.input as AttemptInput, msg.inputId, machines);
+      else if (msg.group.startsWith("run:")) r = await consumeRun(deps, msg.group.slice(4), msg.input as RunInput, msg.inputId, machines);
+      else if (msg.group.startsWith("repo:")) r = await consumeRepo(deps, msg.group.slice(5), msg.input as RepoInput, msg.inputId, machines);
+      else throw new Error(`unknown group ${msg.group}`);
+      // One line per consumed input; with consume.version_conflict it gives the conflict rate (T121).
+      deps.log?.({ event: "consume.done", machine, outcome: r.outcome, tries: i + 1 });
+      return r;
     } catch (e) {
       if (e instanceof DuplicateInput) return { outcome: "duplicate", intents: [] };
       if (!(e instanceof VersionConflict)) throw e;

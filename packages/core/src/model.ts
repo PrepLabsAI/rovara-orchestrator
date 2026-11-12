@@ -172,6 +172,8 @@ export interface NodeRunState {
   unblockedBySkip: string[];
   /** Attempts used before the last operator retry; the attempt limit counts from here (FR-033). */
   attemptsBeforeRetry?: number;
+  /** Attempts Rovara refused for its workspace limit; they do not count toward the limit (FR-062). */
+  refusedStarts?: number;
   version: number;
 }
 
@@ -317,6 +319,10 @@ export interface Repository {
   startRate: number | null;
   rovaraFreeWorkspaces: number | null;
   rovaraProjectLimit: number | null;
+  /** The last back-off window turned into a start rate (FR-063). */
+  rateWindow?: number;
+  /** When Rovara last refused a start for its workspace limit; starts wait a minute after it (FR-062). */
+  workspaceLimitAt?: string | null;
   /** The Slack message announcing the pause, replied to when main is green again (FR-035). */
   notification: { slackKey: string } | null;
   version: number;

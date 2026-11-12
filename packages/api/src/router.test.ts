@@ -50,11 +50,10 @@ describe("operator API frame", () => {
     expect(match("/v1/runs/:runId", "/v1/runs/run_1/pause")).toBeUndefined();
   });
 
-  test("unknown routes are 404; stub routes answer 501 once authenticated", async () => {
-    expect((await handle(deps, req("GET", "/v1/nope", aliceToken))).status).toBe(404);
-    const r = await handle(deps, req("GET", "/v1/repos/acme/mono", aliceToken));
-    expect(r.status).toBe(501);
-    expect(r.body).toMatchObject({ error: { code: "NOT_IMPLEMENTED" } });
+  test("unknown routes are 404 once authenticated", async () => {
+    const r = await handle(deps, req("GET", "/v1/nope", aliceToken));
+    expect(r.status).toBe(404);
+    expect(r.body).toMatchObject({ error: { code: "NOT_FOUND" } });
   });
 
   test("refuses missing tokens and non-operators, and records each refusal", async () => {

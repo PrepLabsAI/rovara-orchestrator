@@ -71,8 +71,10 @@ describe("workspace and conversation failures", () => {
     expect(t.node?.state).toBe("escalated");
   });
 
-  test("a workspace-limit refusal is not a failure (capacity handles it)", () => {
-    expect(attemptMachine(ctxWith({ phase: "starting" }), rovara("error", { code: "workspace_limit", text: "full" }))).toBeUndefined();
+  test("a workspace-limit refusal is not a failure: no retry, no escalation (capacity handles it)", () => {
+    const t = attemptMachine(ctxWith({ phase: "starting" }, { attempts: 3 }), rovara("error", { code: "workspace_limit", text: "full" }))!;
+    expect(t.node?.state).toBe("waiting");
+    expect(t.decisions).toHaveLength(0);
   });
 
   test("a repeated failure event changes nothing", () => {
