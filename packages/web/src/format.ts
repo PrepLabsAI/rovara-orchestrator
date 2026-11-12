@@ -14,3 +14,6 @@ export function stepText(payload: unknown): string {
 
 /** Load once; the page shows "Loading" until then and the error if it fails. */
 export type Load<T> = { state: "loading" } | { state: "ready"; value: T } | { state: "failed"; message: string };
+
+/** Pages reload their data this often, so a run can be watched without reloading. */
+export const REFRESH_MS = 2000;

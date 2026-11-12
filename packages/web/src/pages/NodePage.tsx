@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { StatusApi, TraceStep } from "../api.js";
 import { runHref, stepText } from "../format.js";
+import { REFRESH_MS } from "../format.js";
 import { useLoad } from "../useLoad.js";
 
 export const TRACE_POLL_MS = 2000;
@@ -43,7 +44,7 @@ function useTrace(api: StatusApi, runId: string, nodeId: string) {
 
 /** One node: attempts, PRs, questions and answers, review comments, decisions and the live trace. Read-only. */
 export function NodePage({ api, runId, nodeId }: { api: StatusApi; runId: string; nodeId: string }) {
-  const node = useLoad(() => api.getNode(runId, nodeId), [api, runId, nodeId]);
+  const node = useLoad(() => api.getNode(runId, nodeId), [api, runId, nodeId], REFRESH_MS);
   const trace = useTrace(api, runId, nodeId);
   if (node.state === "loading") return <p className="muted">Loading {nodeId}…</p>;
   if (node.state === "failed") return <p className="error">Could not load {nodeId}: {node.message}</p>;

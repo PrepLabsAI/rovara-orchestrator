@@ -7,8 +7,14 @@
  *   npx tsx scripts/local.ts                     # an empty orchestrator: import and start with the CLI
  *   npx tsx scripts/local.ts --demo              # also seeds a 6-node DAG and starts a run
  *   npx tsx scripts/local.ts --repo owner/name   # the monorepo the fake GitHub plays (default acme/mono)
+ *   npx tsx scripts/local.ts --demo --pace 700   # slower, to watch it (ms between steps; default 150)
+ *
+ * The status page (built with `npm run -w packages/web build`) is served at http://localhost:3000/,
+ * already signed in.
  */
+import { existsSync, readFileSync } from "node:fs";
 import { createServer } from "node:http";
+import { extname, join, normalize } from "node:path";
 import { handle, type ApiDeps } from "@rovara-orch/api";
 import { DevIdentity } from "@rovara-orch/identity";
 import { createHarness } from "@rovara-orch/testkit";
@@ -19,6 +25,8 @@ const value = (name: string) => {
   return i >= 0 ? process.argv[i + 1] : undefined;
 };
 const port = Number(value("port") ?? 3000);
+const pace = Number(value("pace") ?? 150);
+const pageDir = join(import.meta.dirname, "../packages/web/dist");
 
 const h = await createHarness({ name: "local", seed: Date.now() % 100_000, github: { repo: value("repo") ?? "acme/mono" } });
 const identity = new DevIdentity({ stage: "local", signingKey: "local-signing-key", operators: [{ id: "dev_op", name: "Local operator", admin: true }] });
@@ -37,6 +45,8 @@ const deps: ApiDeps = {
 const cors = { "access-control-allow-origin": "*", "access-control-allow-headers": "authorization, content-type, idempotency-key", "access-control-allow-methods": "GET, POST, PUT" };
 createServer(async (req, res) => {
   if (req.method === "OPTIONS") return void res.writeHead(204, cors).end();
+  const path = new URL(req.url ?? "/", `http://localhost:${port}`).pathname;
+  if (!path.startsWith("/v1/") && req.method === "GET") return servePage(path, res);
   const chunks: Buffer[] = [];
   for await (const c of req) chunks.push(c as Buffer);
   const raw = Buffer.concat(chunks).toString("utf8");
@@ -50,6 +60,19 @@ createServer(async (req, res) => {
   const r = await handle(deps, { method: req.method ?? "GET", path: url.pathname, headers: req.headers as Record<string, string>, query: Object.fromEntries(url.searchParams), body });
   res.writeHead(r.status, { "content-type": "application/json", ...cors }).end(JSON.stringify(r.body));
 }).listen(port);
+
+const TYPES: Record<string, string> = { ".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".svg": "image/svg+xml" };
+
+/** The built status page, with the local token put in the tab so it opens signed in. */
+function servePage(path: string, res: import("node:http").ServerResponse) {
+  if (!existsSync(pageDir)) return void res.writeHead(404, { "content-type": "text/plain" }).end("Build the page first: npm run -w packages/web build");
+  const file = path === "/" ? "index.html" : normalize(path).replace(/^([/\\]|\.\.)+/, "");
+  const full = join(pageDir, file);
+  if (!full.startsWith(pageDir) || !existsSync(full)) return void res.writeHead(404).end();
+  let body: string | Buffer = readFileSync(full);
+  if (file === "index.html") body = body.toString("utf8").replace("<head>", `<head><script>sessionStorage.setItem("rovara-orch-token", ${JSON.stringify(token)})</script>`);
+  res.writeHead(200, { "content-type": TYPES[extname(full)] ?? "application/octet-stream" }).end(body);
+}
 
 if (flag("demo")) {
   const dagId = await h.seedDag([
@@ -65,6 +88,7 @@ if (flag("demo")) {
   console.log(`Demo run ${runId} started.`);
 }
 
+console.log(`Status page: http://localhost:${port}/`);
 console.log(`Operator API on http://localhost:${port}`);
 console.log(`Token: ${token}`);
 console.log(`  rovara-orch --url http://localhost:${port} login --token ${token}`);
@@ -73,5 +97,5 @@ console.log(`  rovara-orch --url http://localhost:${port} login --token ${token}
 for (;;) {
   h.clock.advance(1000);
   if (!(await h.step())) await h.idle();
-  await new Promise((r) => setTimeout(r, 150));
+  await new Promise((r) => setTimeout(r, pace));
 }
