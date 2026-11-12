@@ -21,7 +21,8 @@
     "deploy": "npm --workspace infra run deploy --",
     "db:up": "docker ps -q -f name=^rovara-orch-dynamodb$ | grep -q . && echo 'DynamoDB Local is already running' || docker run -d --rm -p 8000:8000 --name rovara-orch-dynamodb amazon/dynamodb-local:latest -jar DynamoDBLocal.jar -inMemory -sharedDb",
     "db:down": "docker stop rovara-orch-dynamodb",
-    "local": "tsx scripts/local.ts"
+    "local": "tsx scripts/local.ts",
+    "orch": "node packages/cli/bin/rovara-orch.js"
   },
   "devDependencies": {
     "@aws-sdk/client-cloudwatch-logs": "^3.1167.0",
