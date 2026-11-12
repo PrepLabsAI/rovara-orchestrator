@@ -2,6 +2,7 @@ import { describe, expect, test } from "vitest";
 import { cliHarness } from "./testing.js";
 
 const node = {
+  pageUrl: "https://status.test/#/runs/run_1/nodes/US1",
   nodeId: "US1",
   title: "Sign up",
   state: "pr_open",
@@ -26,7 +27,7 @@ describe("rovara-orch node show", () => {
     expect(await t.run("node", "show", "run_1", "US1")).toBe(0);
     expect(t.calls[0]).toMatchObject({ method: "GET", path: "/v1/runs/run_1/nodes/US1" });
     const out = t.lines.join("\n");
-    for (const s of ["US1", "Sign up", "pr_open", "https://github.com/acme/mono/pull/7", "24h or 7d?", "Use 24h.", "src/a.ts:12", "Handle null.", "approve", "https://rovara.test/tasks/t1", "https://orch.test/runs/run_1/nodes/US1"]) {
+    for (const s of ["US1", "Sign up", "pr_open", "https://github.com/acme/mono/pull/7", "24h or 7d?", "Use 24h.", "src/a.ts:12", "Handle null.", "approve", "https://rovara.test/tasks/t1", "https://status.test/#/runs/run_1/nodes/US1"]) {
       expect(out).toContain(s);
     }
   });

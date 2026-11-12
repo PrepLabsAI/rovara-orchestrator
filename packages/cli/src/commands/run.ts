@@ -58,8 +58,8 @@ export function register(program: Command, ctx: () => CliContext): void {
       const r = await c.api.request("POST", "/v1/runs", body);
       const link = (r.body as { error?: { linkUrl?: string } } | null)?.error?.linkUrl;
       if (link) throw new CliFailure(EXIT.refused, `Link your Rovara sign-in to the orchestrator first: ${link}`);
-      const { runId } = expectOk(r) as { runId: string };
-      print(c, { runId }, () => [`Started ${runId}.`, `Status page: ${c.url.replace(/\/$/, "")}/runs/${runId}`]);
+      const started = expectOk(r) as { runId: string; pageUrl?: string };
+      print(c, started, () => [`Started ${started.runId}.`, ...(started.pageUrl ? [`Status page: ${started.pageUrl}`] : [])]);
     });
 
   run

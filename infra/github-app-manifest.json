@@ -1,0 +1,15 @@
+{
+  "name": "rovara-orchestrator",
+  "description": "Merges the pull requests Rovara opens for a DAG run, through the merge queue. Installed on the monorepo only.",
+  "url": "https://github.com/PrepLabsAI/rovara-orchestrator",
+  "hook_attributes": { "url": "https://REPLACE-WITH-API-URL/github/events", "active": true },
+  "public": false,
+  "default_permissions": {
+    "metadata": "read",
+    "contents": "write",
+    "pull_requests": "write",
+    "checks": "read",
+    "statuses": "read"
+  },
+  "default_events": ["pull_request", "pull_request_review", "pull_request_review_comment", "pull_request_review_thread", "check_suite", "check_run", "status", "merge_group", "push"]
+}

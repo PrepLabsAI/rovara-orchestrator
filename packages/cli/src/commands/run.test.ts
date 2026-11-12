@@ -19,7 +19,7 @@ const run = {
 
 describe("rovara-orch run", () => {
   test("start posts the DAG, limits and every retry option, and prints the run id and page link", async () => {
-    const t = cliHarness(() => ({ status: 201, body: { runId: "run_1" } }));
+    const t = cliHarness(() => ({ status: 201, body: { runId: "run_1", pageUrl: "https://status.test/#/runs/run_1" } }));
     const code = await t.run("run", "start", "dag_1", "--concurrency", "3", "--cost-limit", "50", "--attempts", "4", "--fix-requests", "1", "--pr-updates", "2", "--review-rounds", "5", "--quiet-minutes", "45");
     expect(code).toBe(0);
     expect(t.calls[0]).toMatchObject({
@@ -28,6 +28,7 @@ describe("rovara-orch run", () => {
       body: { dagId: "dag_1", concurrencyLimit: 3, costLimitUsd: 50, retry: { attempts: 4, fixRequests: 1, prUpdates: 2, reviewRounds: 5, quietMinutes: 45 } },
     });
     expect(t.lines.join("\n")).toContain("run_1");
+    expect(t.lines.join("\n")).toContain("Status page: https://status.test/#/runs/run_1");
   });
 
   test("start without the retry options sends none", async () => {

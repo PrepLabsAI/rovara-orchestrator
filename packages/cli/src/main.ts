@@ -21,8 +21,10 @@ export interface CliDeps {
 /** Run `rovara-orch` with `argv` (without node and script) and return the exit code. */
 export async function runCli(argv: string[], deps: CliDeps = {}): Promise<number> {
   const io: Output = deps.io ?? { out: (l) => console.log(l), err: (l) => console.error(l) };
-  const tokens = deps.tokens ?? new KeychainTokenStore();
   const env = deps.env ?? process.env;
+  // CI and scripts pass the token in the environment; it replaces the keychain and is never stored.
+  const fromEnv = env.ROVARA_ORCH_TOKEN;
+  const tokens: TokenStore = fromEnv ? { get: async () => fromEnv, set: async () => {}, delete: async () => {} } : (deps.tokens ?? new KeychainTokenStore());
   const program = new Command("rovara-orch")
     .description("Operate the Rovara DAG orchestrator")
     .option("--url <url>", "orchestrator URL", env.ROVARA_ORCH_URL)

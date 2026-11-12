@@ -134,6 +134,7 @@ function holdOps(h: Hold): Op[] {
 export async function runSchedulerPass(deps: Deps, repoName: string): Promise<Intent[]> {
   const owner = `pass-${Math.random().toString(36).slice(2)}`;
   if (!(await acquireLease(deps.table, repoName, owner, deps.clock.now()))) return [];
+  deps.log?.({ event: "scheduler.pass", repo: repoName }); // a stalled scheduler is alarmed (T122)
   const written: Intent[] = [];
   try {
     const snapshot = await loadSnapshot(deps, repoName);

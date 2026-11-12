@@ -121,7 +121,7 @@ describe("status API (US5)", () => {
     expect(run.notifications).toEqual([expect.objectContaining({ nodeId: "US1", template: "adminRequest", delivered: false, lastError: expect.stringContaining("no Slack notification channel") })]);
 
     const node = (await get(`/v1/runs/${runId}/nodes/foundational`)).body as Record<string, unknown> & { attempts: Array<Record<string, unknown>>; decisions: unknown[] };
-    expect(node).toMatchObject({ nodeId: "foundational", state: "merged", unblockedBySkip: [] });
+    expect(node).toMatchObject({ nodeId: "foundational", state: "merged", unblockedBySkip: [], pageUrl: `https://status.test/#/runs/${runId}/nodes/foundational` });
     const a = node.attempts[0]!;
     expect(a).toMatchObject({ n: 1, phase: "merged", rovaraTaskUrl: expect.any(String), checkReports: [expect.objectContaining({ status: "passed" })] });
     expect(a.pullRequests).toEqual([expect.objectContaining({ state: "merged", url: expect.stringContaining("/pull/") })]);

@@ -1,12 +1,13 @@
 import { attemptIdOf, attemptThread, type Question, type ReviewComment } from "@rovara-orch/core";
 import { ApiError } from "../errors.js";
 import type { ApiDeps, Route } from "../types.js";
+import { pageLink } from "./runs.js";
 
 /**
  * One node: its state, every attempt with its phase, check reports, questions and answers, review
  * comments and pull requests, and the node's decision records (contracts/operator-api.md).
  */
-export async function nodeView(deps: Pick<ApiDeps, "table" | "repos">, runId: string, nodeId: string) {
+export async function nodeView(deps: Pick<ApiDeps, "table" | "repos" | "config">, runId: string, nodeId: string) {
   const run = await deps.repos.getRun(runId);
   const node = run ? await deps.repos.getRunNode(runId, nodeId) : undefined;
   if (!run || !node) throw new ApiError("NOT_FOUND", `no node ${nodeId} in run ${runId}`);
@@ -46,6 +47,7 @@ export async function nodeView(deps: Pick<ApiDeps, "table" | "repos">, runId: st
   const { version: _v, ...state } = node;
   return {
     ...state,
+    pageUrl: pageLink(deps.config.statusPageUrl, `/runs/${encodeURIComponent(runId)}/nodes/${encodeURIComponent(nodeId)}`),
     unblockedBySkip,
     title: dagNode?.title ?? nodeId,
     kind: dagNode?.kind ?? null,

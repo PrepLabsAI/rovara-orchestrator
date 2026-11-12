@@ -35,6 +35,8 @@ Expected:
 
 ```bash
 speckit-dag specs/001-user-auth --unit story --strict > units.json   # in the test monorepo
+npm run local -- --repo <owner/name of the DAG's repo> &           # local API against fakes (scripts/local.ts)
+rovara-orch --url http://localhost:3000 login --token <printed token>
 rovara-orch --url http://localhost:3000 dag import units.json         # local API against fakes
 rovara-orch dag import units.json                                     # again: same dag-id, "not new"
 ```
@@ -46,9 +48,9 @@ is refused with `spec_dirty` (US1 scenarios 1 to 5).
 ## 3. TEST stage: a 6-node run end to end
 
 ```bash
-npm run deploy -- --stage test           # prints the API URL and the status page URL
+npm run deploy -- -c stage=test          # prints the API URL and the status page URL (context: docs/runbook.md)
 VITE_API_URL=<api url> npm run -w packages/web build
-npm run deploy -- --stage test           # again: uploads the built status page
+npm run deploy -- -c stage=test          # again: uploads the built status page
 rovara-orch login                         # Rovara sign-in (development identity until Rovara#442)
 rovara-orch dag import units-6node.json   # Setup -> Foundational -> US1, US2, US3 -> Polish
 rovara-orch run start <dagId> --concurrency 3 --cost-limit 50
@@ -87,8 +89,9 @@ approved and nothing merges; `rovara-orch stop off --reason test` resumes, and t
 ## 5. Load stage: 1000 concurrent nodes
 
 ```bash
-npm run deploy -- --stage load      # orchestrator + fake Rovara and fake GitHub as Lambdas
-npm run load -- --nodes 1200 --concurrency 1000
+npm run deploy -- -c stage=load     # orchestrator + fake Rovara and fake GitHub as one Lambda
+ROVARA_ORCH_URL=<ApiUrl> LOAD_TOKEN=<token> FAKE_SERVICES_URL=<FakeServicesUrl> \
+  FAKE_SERVICES_SECRET=<from the stack> LOAD_CONSUMER_LOG_GROUP=<WorkConsumerLogGroup> npm run load
 ```
 
 Expected (US6, SC-003, SC-007, SC-009): concurrency reaches 1000; 95% of eligible nodes start

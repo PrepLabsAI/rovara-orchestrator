@@ -17,10 +17,11 @@
     "test:integration": "vitest run --project integration",
     "test:fault": "vitest run --project fault",
     "test:e2e": "E2E=1 vitest run --project e2e",
-    "load": "vitest run --project load",
+    "load": "LOAD=1 vitest run --project load",
     "deploy": "npm --workspace infra run deploy --",
     "db:up": "docker run -d --rm -p 8000:8000 --name rovara-orch-dynamodb amazon/dynamodb-local:latest -jar DynamoDBLocal.jar -inMemory -sharedDb",
-    "db:down": "docker stop rovara-orch-dynamodb"
+    "db:down": "docker stop rovara-orch-dynamodb",
+    "local": "tsx scripts/local.ts"
   },
   "devDependencies": {
     "@aws-sdk/client-cloudwatch-logs": "^3.1167.0",
