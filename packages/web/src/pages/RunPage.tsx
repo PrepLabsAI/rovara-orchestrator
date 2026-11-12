@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { RunNode, StatusApi } from "../api.js";
 import { money, nodeHref } from "../format.js";
+import { REFRESH_MS } from "../format.js";
 import { useLoad } from "../useLoad.js";
 
 const STATE_ORDER = ["running", "checks_failed", "pr_open", "in_merge_queue", "eligible", "waiting", "escalated", "merged", "skipped", "cancelled"];
@@ -14,7 +15,7 @@ function matches(n: RunNode, q: string, state: string): boolean {
 
 /** One run: counts per node state, cost, and every node, found by id, title or state (SC-008). Read-only. */
 export function RunPage({ api, runId }: { api: StatusApi; runId: string }) {
-  const run = useLoad(() => api.getRun(runId), [api, runId]);
+  const run = useLoad(() => api.getRun(runId), [api, runId], REFRESH_MS);
   const [q, setQ] = useState("");
   const [state, setState] = useState("");
   const nodes = run.state === "ready" ? run.value.nodes : [];

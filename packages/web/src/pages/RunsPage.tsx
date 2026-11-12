@@ -1,5 +1,6 @@
 import type { StatusApi } from "../api.js";
 import { money, runHref } from "../format.js";
+import { REFRESH_MS } from "../format.js";
 import { useLoad } from "../useLoad.js";
 
 const summary = (counts: Record<string, number>) =>
@@ -10,7 +11,7 @@ const summary = (counts: Record<string, number>) =>
 
 /** Every run, newest first. Read-only. */
 export function RunsPage({ api }: { api: StatusApi }) {
-  const runs = useLoad(() => api.listRuns(), [api]);
+  const runs = useLoad(() => api.listRuns(), [api], REFRESH_MS);
   if (runs.state === "loading") return <p className="muted">Loading runs…</p>;
   if (runs.state === "failed") return <p className="error">Could not load the runs: {runs.message}</p>;
   if (!runs.value.length) return <p className="muted">No runs yet. Start one with rovara-orch run start.</p>;
