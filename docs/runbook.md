@@ -36,6 +36,44 @@ VITE_API_URL=<ApiUrl> npm run -w packages/web build
 npm run deploy -- -c stage=test …          # same context as above
 ```
 
+### Stage settings in cdk.json
+
+Instead of the `-c rovara=…`, `-c github=…` and `-c devOperators=…` flags, a stage's settings can be
+kept under `stages.<stage>` in `infra/cdk.json`. A `-c` flag still wins over the file. None of these
+values are secrets (those are in Secrets Manager), so they are reviewed like any other change.
+
+```json
+"stages": {
+  "test": {
+    "rovara": { "url": "https://<rovara api>", "channel": "orchestrator", "tenant": "<tenant>", "space": "<space>" },
+    "github": { "appId": "<app id>", "installationId": "<installation id>" },
+    "devOperators": [{ "id": "dev_admin", "name": "Admin", "admin": true }]
+  }
+}
+```
+
+### Deploy pipeline (optional)
+
+A CodePipeline that deploys one stage (not `prod`) on every push to a branch. Each run checks out the
+branch, runs lint, typecheck and the unit, infra, contract, integration and fault tests (against
+DynamoDB Local in Docker), then deploys the stage with its settings from `cdk.json`, builds the
+status page against the stage's `ApiUrl`, and deploys again to upload it. Pushes are deployed one
+at a time, in order.
+
+It needs an authorized CodeConnections GitHub connection whose GitHub App can read the repository
+(in GitHub: organization settings, GitHub Apps, the AWS Connector, repository access). Deploy the
+pipeline once by hand; the pipeline never redeploys itself, so deploy it again the same way after
+changing `infra/lib/pipeline.ts`:
+
+```bash
+cd infra
+npx cdk deploy RovaraOrch-test-Pipeline -c stage=test \
+  -c 'pipeline={"connectionArn":"<connection arn>","repository":"<owner>/<repo>","branch":"main"}'
+```
+
+Creating the pipeline starts a first run on the branch's latest commit. To change a stage's
+settings, edit `stages.<stage>` in `infra/cdk.json` and merge; the next run deploys them.
+
 ## 2. Register the Rovara adapter (D7)
 
 A Rovara administrator of the monorepo's project does this with Rovara's `agentx` CLI
