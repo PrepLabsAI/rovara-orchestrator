@@ -1,0 +1,19 @@
+{
+  "name": "@rovara-orch/cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "dependencies": {
+    "@napi-rs/keyring": "^2.1.2",
+    "commander": "^15.1.0"
+  },
+  "bin": {
+    "rovara-orch": "bin/rovara-orch.js"
+  }
+}

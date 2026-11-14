@@ -1,0 +1,10 @@
+{
+  "id": 9201,
+  "sha": "2222222222222222222222222222222222222222",
+  "name": "acme/mono",
+  "context": "ci/legacy",
+  "state": "pending",
+  "branches": [{ "name": "main", "commit": { "sha": "2222222222222222222222222222222222222222" } }],
+  "repository": { "id": 1, "name": "mono", "full_name": "acme/mono", "default_branch": "main" },
+  "sender": { "login": "ci-bot", "type": "User" }
+}

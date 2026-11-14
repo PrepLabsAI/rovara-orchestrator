@@ -1,0 +1,61 @@
+{
+  "action": "synchronize",
+  "number": 7,
+  "before": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "after": "dddddddddddddddddddddddddddddddddddddddd",
+  "pull_request": {
+    "url": "https://api.github.com/repos/acme/mono/pulls/7",
+    "id": 7001,
+    "node_id": "PR_kwDOAAAAAc4AAAAB",
+    "html_url": "https://github.com/acme/mono/pull/7",
+    "number": 7,
+    "state": "open",
+    "title": "US1: sign up",
+    "user": {
+      "login": "rovara-app[bot]"
+    },
+    "head": {
+      "ref": "rovara/us1",
+      "sha": "dddddddddddddddddddddddddddddddddddddddd",
+      "repo": {
+        "id": 1,
+        "full_name": "acme/mono",
+        "name": "mono",
+        "owner": {
+          "login": "acme"
+        },
+        "default_branch": "main"
+      }
+    },
+    "base": {
+      "label": "acme:main",
+      "ref": "main",
+      "sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "repo": {
+        "id": 1,
+        "full_name": "acme/mono",
+        "name": "mono",
+        "owner": {
+          "login": "acme"
+        },
+        "default_branch": "main"
+      }
+    },
+    "merged": false,
+    "mergeable": true,
+    "merge_commit_sha": null,
+    "changed_files": 4,
+    "additions": 40,
+    "deletions": 2,
+    "commits": 1
+  },
+  "repository": {
+    "id": 1,
+    "full_name": "acme/mono",
+    "name": "mono",
+    "owner": {
+      "login": "acme"
+    },
+    "default_branch": "main"
+  }
+}

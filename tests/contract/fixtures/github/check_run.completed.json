@@ -1,0 +1,28 @@
+{
+  "action": "completed",
+  "check_run": {
+    "id": 12,
+    "name": "test",
+    "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "status": "completed",
+    "conclusion": "failure",
+    "check_suite": {
+      "id": 11,
+      "head_branch": "rovara/us1"
+    },
+    "pull_requests": [
+      {
+        "number": 7
+      }
+    ]
+  },
+  "repository": {
+    "id": 1,
+    "full_name": "acme/mono",
+    "name": "mono",
+    "owner": {
+      "login": "acme"
+    },
+    "default_branch": "main"
+  }
+}

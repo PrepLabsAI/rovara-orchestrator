@@ -1,0 +1,14 @@
+node_modules/
+dist/
+build/
+coverage/
+cdk.out
+.cache/
+*.log
+.env*
+.DS_Store
+*.tmp
+*.swp
+.vscode/
+.idea/
+infra/cdk-outputs-*.json

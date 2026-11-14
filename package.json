@@ -1,0 +1,49 @@
+{
+  "name": "rovara-orchestrator",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "infra"
+  ],
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run --project unit --project infra",
+    "test:contract": "vitest run --project contract",
+    "test:integration": "vitest run --project integration",
+    "test:fault": "vitest run --project fault",
+    "test:e2e": "E2E=1 vitest run --project e2e",
+    "load": "LOAD=1 vitest run --project load",
+    "deploy": "npm --workspace infra run deploy --",
+    "db:up": "docker ps -q -f name=^rovara-orch-dynamodb$ | grep -q . && echo 'DynamoDB Local is already running' || docker run -d --rm -p 8000:8000 --name rovara-orch-dynamodb amazon/dynamodb-local:latest -jar DynamoDBLocal.jar -inMemory -sharedDb",
+    "db:down": "docker stop rovara-orch-dynamodb",
+    "local": "tsx scripts/local.ts",
+    "orch": "node packages/cli/bin/rovara-orch.js"
+  },
+  "devDependencies": {
+    "@aws-sdk/client-cloudwatch-logs": "^3.1167.0",
+    "@types/aws-lambda": "^8.10.164",
+    "@types/node": "^26.6.6",
+    "eslint": "^10.14.0",
+    "fast-check": "^4.10.2",
+    "prettier": "^3.10.0",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.72.2",
+    "vitest": "^3.2.7"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.1167.0",
+    "@aws-sdk/client-s3": "^3.1167.0",
+    "@aws-sdk/client-sqs": "^3.1167.0",
+    "@aws-sdk/lib-dynamodb": "^3.1167.0",
+    "commander": "^15.1.0",
+    "standardwebhooks": "^1.1.1",
+    "ulid": "^3.0.2",
+    "zod": "^4.6.7"
+  }
+}
