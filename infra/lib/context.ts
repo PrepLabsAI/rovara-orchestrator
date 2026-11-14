@@ -13,3 +13,15 @@ export function jsonContext<T = unknown>(app: App, key: string): T | undefined {
     throw new Error(`context "${key}" is not valid JSON: ${(e as Error).message}`);
   }
 }
+
+/**
+ * A deploy setting for one stage: a `-c key=...` value on the command line if given, otherwise the
+ * value under `stages.<stage>.<key>` in cdk.json. Keeping each stage's settings in cdk.json lets the
+ * deploy pipeline run `npm run deploy` with no settings typed in.
+ */
+export function stageContext<T = unknown>(app: App, stage: string, key: string): T | undefined {
+  const given = jsonContext<T>(app, key);
+  if (given !== undefined) return given;
+  const stages = jsonContext<Record<string, Record<string, unknown> | undefined>>(app, "stages");
+  return stages?.[stage]?.[key] as T | undefined;
+}

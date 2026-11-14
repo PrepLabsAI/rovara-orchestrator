@@ -1,1 +1,13 @@
-{ "app": "npx tsx bin/app.ts", "context": { "stage": "test" } }
+{
+  "app": "npx tsx bin/app.ts",
+  "context": {
+    "stage": "test",
+    "stages": {
+      "test": {
+        "rovara": { "url": "https://rovara.invalid", "channel": "orchestrator", "tenant": "orchestrator", "space": "test" },
+        "github": { "appId": "0", "installationId": "0" },
+        "devOperators": [{ "id": "dev_admin", "name": "Admin", "admin": true }]
+      }
+    }
+  }
+}
