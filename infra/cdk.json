@@ -4,7 +4,7 @@
     "stage": "test",
     "stages": {
       "test": {
-        "rovara": { "url": "https://rovara.invalid", "channel": "orchestrator", "tenant": "orchestrator", "space": "test" },
+        "rovara": { "url": "https://3m38w35kz2.execute-api.us-east-1.amazonaws.com", "channel": "orchestrator", "tenant": "orchestrator", "space": "test" },
         "github": { "appId": "0", "installationId": "0" },
         "devOperators": [{ "id": "dev_admin", "name": "Admin", "admin": true }]
       }
